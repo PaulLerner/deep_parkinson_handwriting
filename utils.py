@@ -1,4 +1,5 @@
 import numpy as np
+from time import time
 
 measure2index={"y-coordinate":0,"x-coordinate":1,"timestamp":2, "button_status":3,"tilt":4, "elevation":5,"pressure":6}
 index2measure=list(measure2index.keys())
@@ -8,29 +9,15 @@ index2task=list(task2index.keys())
 
 one_hot=np.identity(8)
 
+def flat_list(list):
+    return [item for sublist in list for item in sublist]
+
 def timeSince(since):
     now = time()
     s = now - since
     m = np.floor(s / 60)
     s -= m * 60
     return '%dm %ds' % (m, s)
-
-def return_results(train_metrics,valid_metrics,early_stopping,flat_falses):
-    train_metrics,valid_metrics=np.asarray(train_metrics),np.asarray(valid_metrics)
-    model_name="LSTM" if is_lstm else "GRU"
-    task_name=index2task[task_i] if task_i is not None else str(task_i)
-    results="{} ; {} ; {} ; {} ; {} ; {} ; {} ; {} ; {} ; {} ; {} ; {:.2f} (+ {:.2f}) ; {:.2f} (+ {:.2f}) ".format(
-    task_name,model_name,compute_movement,downsampling_factor,learning_rate,
-        hidden_size,num_layers,bidirectional,carry_over,dropout,clip,
-    np.mean(early_stopping),np.std(early_stopping),np.mean(train_metrics[:,1]),np.std(train_metrics[:,1]))
-    
-    valid_metrics=valid_metrics.T
-    for metric in valid_metrics[1:]:#don't care about the loss
-        mean,std=np.mean(metric),np.std(metric)
-        results+="; {:.2f} (+ {:.2f}) ".format(mean,std)
-    results+=" ; "
-    results+=" ; ".join(map(str, flat_falses))
-    return results
 
 def confusion_matrix(y_true,y_pred):
     tn, fp, fn, tp=0,0,0,0
@@ -49,13 +36,3 @@ def confusion_matrix(y_true,y_pred):
             else:
                 tp+=1
     return tn, fp, fn, tp, false_i
-
-def plot_loss():
-    print(results[0:80].replace(";","|"))
-    plt.figure()
-    plt.title("average loss over 10 folds over the {} first epochs".format(shortest_fold))
-    plt.plot(avg_train[:,0],label="training")
-    plt.plot(avg_valid[:,0],label="validation")
-    plt.xlabel("epochs")
-    plt.ylabel("loss")
-    plt.legend()
