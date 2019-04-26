@@ -7,7 +7,18 @@ index2measure=list(measure2index.keys())
 task2index={"spiral":0,"l":1,"le":2 ,"les":3,"lektorka" :4,"porovnat":5,"nepopadnout":6, "tram":7}
 index2task=list(task2index.keys())
 
+plot2index={"loss":0,"accuracy":1}
+index2plot= list(plot2index.keys())
+
 one_hot=np.identity(8)
+
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise ValueError('Boolean value expected.')
 
 def flat_list(list):
     return [item for sublist in list for item in sublist]
