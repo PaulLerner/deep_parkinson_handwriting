@@ -23,7 +23,7 @@ import torch
 from sklearn.model_selection import StratifiedKFold
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda" if USE_CUDA else "cpu")
-print(device)
+print("device :\nin main :" ,device)
 #utils
 from time import time
 import warnings
@@ -40,8 +40,7 @@ from training import *
 #to enable argument in command line
 import sys
 
-print ('Number of arguments:', len(sys.argv), 'arguments.')
-print( 'Argument List:', str(sys.argv))
+print( 'Argument List:', str(sys.argv[1:]))
 print("arguments should be the hyperparameters :")
 print("""is_lstm,
 learning_rate,
@@ -77,7 +76,7 @@ try:
 except ValueError:
     window_size=None
 
-print("loading and massaging data, this might take a few seconds...")
+print("\nloading and massaging data, this might take a few seconds...")
 data, targets= massage_data(task_i, compute_movement=False, downsampling_factor=1, window_size=window_size)
 # Utils
 #Cf `utils.py`

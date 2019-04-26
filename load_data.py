@@ -52,6 +52,7 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size):
 
     #task_i=0
     if task_i is not None:
+        print("\ntask index, name")
         print(task_i,index2task[task_i])
         #keep only one task
         data=[subject[task_i] for subject in data]
@@ -67,7 +68,7 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size):
 
     #compute_movement=False
     if compute_movement:
-        print("computing movement")
+        print("computing movement\n")
         button_i=measure2index["button_status"]
         for i,task in enumerate(data):
             for t in range(len(task)-1):
@@ -76,7 +77,7 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size):
                 data[i][t][button_i]=button
             data[i]=data[i][:-1]#throw out the last point
     else:
-        print("no modification was done")
+        print("\nmovement was not computed (i.e. data was not transformed)\n")
 
     ## Scale then downsample (or not) then concatenate task id (or not)
 
@@ -114,11 +115,12 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size):
     #window_size=None#Set to None if you don't want to split data into subsequence of fixed length
     overlap=90
     if window_size is not None:
+        print("\nsplicing data into subsequences")
         for i,task in enumerate(data):
             data[i]=[task[w:w+window_size] for w in range(0,len(task)-window_size,window_size-overlap)]
         print("len(data), data[0].shape, total n° of subsequences (i.e. training examples) :")
         print(len(data),",",len(data[0]),len(data[0][0]),len(data[0][0][0]),",",sum([len(subs) for subs in data]))
     else:
-        print("no modification was done")
+        print("the task is represented as one single sequence  (i.e. data was not transformed)")
 
     return data, targets

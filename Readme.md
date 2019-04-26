@@ -13,7 +13,7 @@ arguments should be the hyperparameters :
 
 in that specific order, boolean arguments are not case sensitive, cf. `str2bool()`.  
 to set any `task_i` or `window_size` to `None` non-numerical will do. e.g :  
-`python main.py t 1e-3 10 4 t 0.0 5.0 0 none`  
+`python main.py f 1e-3 10 4 f 0.0 5.0 0 none`  
 If you want to change any other hyperparameters you will have to dive into the `main.py` code.
 
 # Dependencies

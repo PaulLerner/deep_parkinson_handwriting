@@ -1,8 +1,9 @@
 # Training
 import torch
+from utils import *
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda" if USE_CUDA else "cpu")
-print(device)
+print("in training :",device)
 ## step
 
 def step(input, target, model, optimizer, loss_fn, batch_size,clip=None,validation = False):

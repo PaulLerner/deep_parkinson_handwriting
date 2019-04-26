@@ -2,7 +2,7 @@
 import torch
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda" if USE_CUDA else "cpu")
-print("device :" ,device)
+print("in model :" ,device)
 # Model
 """Cf. Report #4 for details about the architecture of the model
 
@@ -134,25 +134,25 @@ class Model(torch.nn.Module):
         if not isinstance(lstm,torch.nn.LSTM):
             raise NotImplementedError("the encoder should be an LSTM and should be the first module of the model")
         with torch.no_grad():#so the optimizer doesn't know about this ;)
-            lstm.bias_hh_l0[hidden_size:2*hidden_size]=torch.ones(lstm.hidden_size)
+            lstm.bias_hh_l0[self.hidden_size:2*self.hidden_size]=torch.ones(lstm.hidden_size)
             if lstm.bidirectional:
-                lstm.bias_hh_l0_reverse[hidden_size:2*hidden_size]=torch.ones(lstm.hidden_size)
+                lstm.bias_hh_l0_reverse[self.hidden_size:2*self.hidden_size]=torch.ones(lstm.hidden_size)
             if lstm.num_layers > 1:
-                lstm.bias_hh_l1[hidden_size:2*hidden_size]=torch.ones(lstm.hidden_size)
+                lstm.bias_hh_l1[self.hidden_size:2*self.hidden_size]=torch.ones(lstm.hidden_size)
                 if lstm.bidirectional:
-                    lstm.bias_hh_l1_reverse[hidden_size:2*hidden_size]=torch.ones(lstm.hidden_size)
+                    lstm.bias_hh_l1_reverse[self.hidden_size:2*self.hidden_size]=torch.ones(lstm.hidden_size)
             if lstm.num_layers > 2:
-                lstm.bias_hh_l2[hidden_size:2*hidden_size]=torch.ones(lstm.hidden_size)
+                lstm.bias_hh_l2[self.hidden_size:2*self.hidden_size]=torch.ones(lstm.hidden_size)
                 if lstm.bidirectional:
-                    lstm.bias_hh_l2_reverse[hidden_size:2*hidden_size]=torch.ones(lstm.hidden_size)
+                    lstm.bias_hh_l2_reverse[self.hidden_size:2*self.hidden_size]=torch.ones(lstm.hidden_size)
             if lstm.num_layers > 3:
-                lstm.bias_hh_l3[hidden_size:2*hidden_size]=torch.ones(lstm.hidden_size)
+                lstm.bias_hh_l3[self.hidden_size:2*self.hidden_size]=torch.ones(lstm.hidden_size)
                 if lstm.bidirectional:
-                    lstm.bias_hh_l3_reverse[hidden_size:2*hidden_size]=torch.ones(lstm.hidden_size)
+                    lstm.bias_hh_l3_reverse[self.hidden_size:2*self.hidden_size]=torch.ones(lstm.hidden_size)
             if lstm.num_layers > 4:
-                lstm.bias_hh_l4[hidden_size:2*hidden_size]=torch.ones(lstm.hidden_size)
+                lstm.bias_hh_l4[self.hidden_size:2*self.hidden_size]=torch.ones(lstm.hidden_size)
                 if lstm.bidirectional:
-                    lstm.bias_hh_l4_reverse[hidden_size:2*hidden_size]=torch.ones(lstm.hidden_size)
+                    lstm.bias_hh_l4_reverse[self.hidden_size:2*self.hidden_size]=torch.ones(lstm.hidden_size)
             if lstm.num_layers>5:
                 raise NotImplementedError("you can only have max 5 layers for now")
 
