@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """# Summary
 - [Data](#Data)
 - [Model](#Model)
@@ -161,7 +163,7 @@ for train_index,valid_index,test_index in cv_matrix:
         model.train()
         [loss,accuracy,sensitivity,specificity,ppv,npv],_=epoch(
         data, targets, model, optimizer, loss_fn, batch_size, train_index,clip,
-            validation=False,window_size,task_i)
+            validation=False,window_size=window_size,task_i=task_i)
         train_metrics.append([loss,accuracy,sensitivity,specificity,ppv,npv])
         to_print+="\n\nfold n°{}, epoch n°{}, spent {}".format(fold,i,timeSince(start))
         to_print+="\nTRAINING : loss {:.3f}, accuracy {:.3f}".format(loss,accuracy)
@@ -170,7 +172,7 @@ for train_index,valid_index,test_index in cv_matrix:
         model.eval()
         [loss,accuracy,sensitivity,specificity,ppv,npv],_=epoch(
             data, targets, model, optimizer, loss_fn, batch_size, valid_index,
-            validation=True,window_size,task_i)
+            validation=True,window_size=window_size,task_i=task_i)
         valid_metrics.append([loss,accuracy,sensitivity,specificity,ppv,npv])
         to_print+="\nVALIDATION : loss {:.3f}, accuracy {:.3f}, sensitivity  {:.3f}, specificity {:.3f}, ppv {:.3f}, npv {:.3f}".format(
             loss,accuracy,sensitivity,specificity,ppv,npv)
@@ -185,7 +187,7 @@ for train_index,valid_index,test_index in cv_matrix:
         #test
         [loss,accuracy,sensitivity,specificity,ppv,npv],false=epoch(
             data, targets, model, optimizer, loss_fn, batch_size, test_index,
-            validation=True,window_size,task_i)
+            validation=True,window_size=window_size,task_i=task_i)
         test_metrics.append([loss,accuracy,sensitivity,specificity,ppv,npv])
         falses.append(false)
         to_print+="\nTEST : loss {:.3f}, accuracy {:.3f}, sensitivity  {:.3f}, specificity {:.3f}, ppv {:.3f}, npv {:.3f}".format(
