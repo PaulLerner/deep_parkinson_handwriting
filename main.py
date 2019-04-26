@@ -75,9 +75,10 @@ try:
     window_size=int(sys.argv[9])
 except ValueError:
     window_size=None
-
+compute_movement=False
+downsampling_factor=1
 print("\nloading and massaging data, this might take a few seconds...")
-data, targets= massage_data(task_i, compute_movement=False, downsampling_factor=1, window_size=window_size)
+data, targets= massage_data(task_i, compute_movement, downsampling_factor, window_size)
 # Utils
 #Cf `utils.py`
 
@@ -254,4 +255,4 @@ for metrics,metric_type in list(zip([fold_train_metrics,
 fold_valid_metrics,
 fold_test_metrics],["train","valid","test"])):
     with open(filename+metric_type, 'wb') as fp:
-        pickle.dump(results, fp)
+        pickle.dump(metrics, fp)

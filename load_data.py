@@ -19,30 +19,36 @@ def load_data():
 
     #Subjects 46 (control), 60 (PD) and 66 (control) didn't perform the spiral !
 
-    data=[]
-    for folder in folder_path:
+    #data=[]
+    for i,folder in enumerate(folder_path):
         subject=[]
         task_path=listdir(join(data_path,folder))
         task_path.sort()
         if len(task_path)!=8:#subject didn't perform the spiral
-            subject.append([])#add an empty array so that all tasks are on the same column number
+            #so we discard it
+            continue
+            #subject.append([])#add an empty array so that all tasks are on the same column number
         for task in task_path:
             path=join(data_path,folder,task)
             #load data as float (not int because we will need to standardize it afterwards)
             #and throw out the first line == number of lines in the file
             subject.append(np.loadtxt(path, dtype=float, skiprows=1,delimiter=" "))
-        data.append(subject)
+        yield subject,labels[i]
+        #data.append(subject)
 
     #discard the subjects that didn't perform spiral
-    targets= [labels[i]  for i,subject in enumerate(data) if len(subject[0])!=0]
-    data=[subject for subject in data if len(subject[0])!=0]
-    return data, targets
+    #targets= [labels[i]  for i,subject in enumerate(data) if len(subject[0])!=0]
+    #data=[subject for subject in data if len(subject[0])!=0]
+    #return data, targets
 
 def massage_data(task_i,compute_movement,downsampling_factor,window_size):
     ## Loading
     #Cf `load_data.py`
-
-    data,targets=load_data()
+    data_gen=load_data()
+    data,targets=[]
+    for subject,label in data_gen:
+        data.append(subject)
+        targets.append(label)
     print("(75-3 subjects, 8 tasks, X timesteps, 7 measures)")
     print(len(data),len(data[0]),len(data[0][0]),len(data[0][0][0]))
 
