@@ -1,4 +1,17 @@
 Work by Paul Lerner under Laurence Likforman-Sulem supervision.
+# Main
+arguments should be the hyperparameters :
+- learning_rate
+- hidden_size
+- num_layers
+- bidirectional
+- dropout
+- clip
+- task_i
+- window_size
+
+in that specific order, boolean arguments are not case sensitive, cf. `str2bool()`.  
+If you want to change any other hyperparameters you will have to dive into the `main.py` code.
 
 # Dependencies
 - PyTorch

@@ -75,6 +75,8 @@ try:
 except ValueError:
     window_size=None
 
+print("loading and massaging data, this might take a few seconds...")
+data, targets= massage_data(task_i, compute_movement=False, downsampling_factor=1, window_size=window_size)
 # Utils
 #Cf `utils.py`
 
