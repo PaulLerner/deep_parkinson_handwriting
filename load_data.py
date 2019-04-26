@@ -45,7 +45,7 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size):
     ## Loading
     #Cf `load_data.py`
     data_gen=load_data()
-    data,targets=[]
+    data,targets=[],[]
     for subject,label in data_gen:
         data.append(subject)
         targets.append(label)
