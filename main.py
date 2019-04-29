@@ -23,7 +23,7 @@ import torch
 from sklearn.model_selection import StratifiedKFold
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda" if USE_CUDA else "cpu")
-print("device :\nin main :" ,device)
+print("device :" ,device)
 #utils
 from time import time
 import warnings
