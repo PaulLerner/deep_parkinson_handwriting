@@ -7,6 +7,7 @@ from sklearn.preprocessing import scale
 from sklearn.preprocessing import MinMaxScaler
 from scipy.signal import resample
 from scipy.signal import decimate
+import warnings
 
 def load_data():
     data_path=join("..","PaHaW","PaHaW_public")#/00026/00026__1_1.svc"
@@ -80,7 +81,7 @@ translated[:,0]+=translation
 translated[:,1]+=translation"""
 
 ## preprocessing
-def massage_data(task_i,compute_movement,downsampling_factor,window_size):
+def massage_data(task_i,compute_movement,downsampling_factor,window_size,paper_air_split=False):
     ## Loading
     #Cf `load_data.py`
     data_gen=load_data()
@@ -94,8 +95,6 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size):
     ## Task selection
     #set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
     #Else set `task_i` to the desired task index (cf. task2index)
-
-    #task_i=0
     if task_i is not None:
         print("\ntask index, name")
         print(task_i,index2task[task_i])
@@ -110,8 +109,6 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size):
 
     ## Compute movement
     #Transforms data as Zhang et al. (cf Report #5)
-
-    #compute_movement=False
     if compute_movement:
         print("computing movement\n")
         button_i=measure2index["button_status"]
@@ -125,21 +122,19 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size):
         print("\nmovement was not computed (i.e. data was not transformed)\n")
 
     ## Scale then downsample (or not) then concatenate task id (or not)
-
-    #downsampling_factor=1
     for i,subject in enumerate(data):
         if task_i is not None:
-            if downsampling_factor==1:#don't downsample
+            if i ==0:
+                print("scaling",end=" ")
+            data[i]=scale(task,axis=0)
+            #keep the button_status unscaled
+            data[i][:,[measure2index["button_status"]]]=subject[:,[measure2index["button_status"]]]
+            if downsampling_factor != 1:
                 if i ==0:
-                    print("scaling")
-                data[i]=scale(subject,axis=0)
-            else:
-                if i ==0:
-                    print("scaling and downsampling")
-                data[i]=decimate(
-                    scale(subject,axis=0),#scale first
-                          downsampling_factor,axis=0)#then downsample
+                    print("and downsampling")
+                data[i]=decimate(data[i], downsampling_factor,axis=0)#then downsample
         else:
+            warnings.warn("you're standardizing the button_status",Warning)
             for j, task in enumerate(subject):
                 if downsampling_factor==1:#don't downsample
                     if i ==0 and j ==0:
@@ -151,20 +146,29 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size):
                         axis=1)#then concatenate the two
                 else:
                     raise NotImplementedError("downsampling is not implemented for Multi-task learning")
-    print("len(data), len(targets), len(data[0]) :")
+    print("\nlen(data), len(targets), len(data[0]) :")
     print(len(data),len(targets),len(data[0]))
 
     ## Split in subsequence (or not)
     #Set `window_size` to `None` if you don't want to split data into subsequence of fixed length
-
-    #window_size=None#Set to None if you don't want to split data into subsequence of fixed length
     overlap=90
     if window_size is not None:
-        print("\nsplicing data into subsequences")
+        print("\nsplitting data into subsequences")
         for i,task in enumerate(data):
             data[i]=[task[w:w+window_size] for w in range(0,len(task)-window_size,window_size-overlap)]
         print("len(data), data[0].shape, total n° of subsequences (i.e. training examples) :")
         print(len(data),",",len(data[0]),len(data[0][0]),len(data[0][0][0]),",",sum([len(subs) for subs in data]))
+    elif paper_air_split:
+        print("\nsplitting data into strokes")
+        for j, task in enumerate(data):
+            changes = []
+            for i in range(len(task)-1):
+                if task[i][measure2index["button_status"]]!=task[i+1][measure2index["button_status"]]:
+                    changes.append(i+1)
+            task=np.split(task,changes)
+            if task[0][0][measure2index["button_status"]]!=on_paper_value:
+                task.pop(0)
+            data[j]=task
     else:
         print("the task is represented as one single sequence  (i.e. data was not transformed)")
 

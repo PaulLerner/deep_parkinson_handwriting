@@ -49,7 +49,7 @@ def step(input, target, model, optimizer, loss_fn, batch_size,clip=None,validati
 ## epoch
 
 def epoch(data,targets, model, optimizer, loss_fn, batch_size, random_index,clip=None,
-          validation=False,window_size=None,task_i=None,augmentation=False):
+          validation=False,window_size=None,task_i=None,augmentation=False,paper_air_split=False):
     losses=[]
     predictions=[]
     condition_targets=[]
@@ -79,7 +79,7 @@ def epoch(data,targets, model, optimizer, loss_fn, batch_size, random_index,clip
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation)
             predictions.append(round(prediction))
             losses.append(loss)
-    elif task_i is not None and window_size is None:#single task learning on the whole sequence
+    elif task_i is not None and window_size is None and not paper_air_split:#single task learning on the whole sequence
         for index in random_index:
             condition_targets.append(targets[index])
             #numpy to tensor
@@ -89,7 +89,9 @@ def epoch(data,targets, model, optimizer, loss_fn, batch_size, random_index,clip
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation)
             predictions.append(round(prediction))
             losses.append(loss)
-    elif task_i is None or window_size is not None:#multitask learning (early fusion) OR single task learning on subsequences
+
+    #multitask learning (early fusion) OR single task learning on subsequences (either fixed window size or strokes)
+    elif task_i is None or window_size is not None or paper_air_split:
         #if multitask learning len(data[i]) == 8 because 8 tasks
         super_index=[(i,j) for i in random_index for j in range(len(data[i]))]
         np.random.shuffle(super_index)
@@ -110,7 +112,7 @@ def epoch(data,targets, model, optimizer, loss_fn, batch_size, random_index,clip
                 predictions.append(round(prediction))
             losses.append(loss)
     else:
-        raise NotImplementedError("check readme.")
+        raise NotImplementedError("check readme or code.")
 
 
     if window_size is not None: #subsequences => we need fuse the predictions of each sub seq (e.g. voting)

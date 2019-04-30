@@ -1,6 +1,6 @@
 import numpy as np
 from time import time
-
+import matplotlib.pyplot as plt
 measure2index={"y-coordinate":0,"x-coordinate":1,"timestamp":2, "button_status":3,"tilt":4, "elevation":5,"pressure":6}
 index2measure=list(measure2index.keys())
 
@@ -9,9 +9,13 @@ index2task=list(task2index.keys())
 
 plot2index={"loss":0,"accuracy":1}
 index2plot= list(plot2index.keys())
-
+on_paper_value=1.0#on_paper_stroke iff button_status==1.0
 one_hot=np.identity(8)
 
+def plot_task(task):
+    plt.plot(task[:,1],task[:,0])
+    plt.xlabel(index2measure[1])
+    plt.ylabel(index2measure[0])
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
