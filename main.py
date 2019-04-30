@@ -27,6 +27,7 @@ print("device :" ,device)
 #utils
 from time import time
 import warnings
+from os.path import join
 
 #to load and save lists
 import pickle
@@ -243,8 +244,8 @@ else:
     print(results)
 
 # Save results
-filename="experiments/"+str((task_i,is_lstm,learning_rate,hidden_size,num_layers,bidirectional,
-dropout,clip,window_size))
+filename=join("experiments",str((task_i,is_lstm,learning_rate,hidden_size,num_layers,bidirectional,
+dropout,clip,window_size)))
 file = open(filename+".csv","w")
 
 file.write(results)

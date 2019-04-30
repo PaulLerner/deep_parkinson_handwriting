@@ -41,6 +41,45 @@ def load_data():
     #data=[subject for subject in data if len(subject[0])!=0]
     #return data, targets
 
+## augmentation
+def flip(task,axis_i):
+    if axis_i is not 0 and axis_i is not 1:
+        raise ValueError("expected 0 or 1 for value of axis_i, got {}".format(axis_i))
+    axis=task[0][axis_i]
+    for i,point in enumerate(task[:,axis_i]):
+        if point < axis:
+            task[i][axis_i]=axis+(axis-point)
+        else:
+            task[i][axis_i]=axis-(point-axis)
+    return task
+def rotate(task, delta_rotate):
+    x0=task[0][0]#angle starts here
+    y0=task[0][1]
+    for i, (y,x) in enumerate(task[:,:2]):
+        vector=[x-x0,y-y0]
+        norm=np.linalg.norm(vector)
+        angle=np.angle(vector[0]+vector[1]*1j)#*1j to add imaginary part to y-coordinate
+        task[i][1]=np.cos(angle+delta_rotate)*norm#new x
+        task[i][0]=np.sin(angle+delta_rotate)*norm#new y
+    return scale(task,axis=0)#recenters the task
+
+#rotated=rotate_(task.copy(),np.pi/10)
+"""
+translation=np.random.rand()-0.5#because the std is one
+h_flip=horizontal_flip(task.copy())
+v_flip=vertical_flip(task.copy())
+double_flip=horizontal_flip(v_flip.copy())
+#~ match the translation scale
+#as the standardized data ranges ~ from -2 to 2
+zoom_factor=np.random.uniform(0.8,1.2)
+zoomed=task.copy()
+zoomed[:,0]*=zoom_factor
+zoomed[:,1]*=zoom_factor
+translated=task.copy()
+translated[:,0]+=translation
+translated[:,1]+=translation"""
+
+## preprocessing
 def massage_data(task_i,compute_movement,downsampling_factor,window_size):
     ## Loading
     #Cf `load_data.py`

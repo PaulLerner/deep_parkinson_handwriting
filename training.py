@@ -1,6 +1,8 @@
 # Training
 import torch
+import numpy as np
 from utils import *
+from load_data import flip,rotate
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda" if USE_CUDA else "cpu")
 ## step
@@ -47,12 +49,37 @@ def step(input, target, model, optimizer, loss_fn, batch_size,clip=None,validati
 ## epoch
 
 def epoch(data,targets, model, optimizer, loss_fn, batch_size, random_index,clip=None,
-          validation=False,window_size=None,task_i=None):
+          validation=False,window_size=None,task_i=None,augmentation=False):
     losses=[]
     predictions=[]
     condition_targets=[]
 
-    if task_i is not None and window_size is None:#single task learning on the whole sequence
+    if augmentation:
+        #i is subject index and j is tranformation index
+        super_index=[(index,j) for index in random_index for j in range(4)]# 4 because 3 transforms + original
+        np.random.shuffle(super_index)
+        for index,j in super_index:
+            condition_targets.append(targets[index])
+            #augmentation
+            if j ==0:#keep original
+                subject=data[index]
+            elif j==1:
+                subject=rotate(data[index].copy(),np.deg2rad(15))#flip(data[index].copy(),axis_i=0)
+            elif j==2:
+                subject=rotate(data[index].copy(),np.deg2rad(-15))
+            elif j==3:
+                subject=rotate(data[index].copy(),np.deg2rad(30))
+            else:
+                raise ValueError("expected j in range(4), got {}".format(j))
+
+            #numpy to tensor
+            subject=torch.Tensor(subject).unsqueeze(1)#add batch dimension
+            target=torch.Tensor([targets[index]])
+
+            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation)
+            predictions.append(round(prediction))
+            losses.append(loss)
+    elif task_i is not None and window_size is None:#single task learning on the whole sequence
         for index in random_index:
             condition_targets.append(targets[index])
             #numpy to tensor
@@ -62,7 +89,7 @@ def epoch(data,targets, model, optimizer, loss_fn, batch_size, random_index,clip
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation)
             predictions.append(round(prediction))
             losses.append(loss)
-    else:#multitask learning (early fusion) OR single task learning on subsequences
+    elif task_i is None or window_size is not None:#multitask learning (early fusion) OR single task learning on subsequences
         #if multitask learning len(data[i]) == 8 because 8 tasks
         super_index=[(i,j) for i in random_index for j in range(len(data[i]))]
         np.random.shuffle(super_index)
@@ -82,6 +109,9 @@ def epoch(data,targets, model, optimizer, loss_fn, batch_size, random_index,clip
             else:#no late fusion => we just care about the label
                 predictions.append(round(prediction))
             losses.append(loss)
+    else:
+        raise NotImplementedError("check readme.")
+
 
     if window_size is not None: #subsequences => we need fuse the predictions of each sub seq (e.g. voting)
         #average over each model's prediction : choose between this and majority voting
@@ -92,7 +122,9 @@ def epoch(data,targets, model, optimizer, loss_fn, batch_size, random_index,clip
 
     #compute metrics
     tn, fp, fn, tp, false_i = confusion_matrix(y_true=condition_targets,y_pred=predictions)
-    if task_i is not None:
+    if augmentation :
+        false=[]
+    elif task_i is not None:
         false=[random_index[i] for i in false_i]
     else:
         false=[random_index[i%len(random_index)] for i in false_i]
