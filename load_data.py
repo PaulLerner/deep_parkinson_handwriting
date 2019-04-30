@@ -126,7 +126,7 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size,paper_a
         if task_i is not None:
             if i ==0:
                 print("scaling",end=" ")
-            data[i]=scale(task,axis=0)
+            data[i]=scale(subject,axis=0)
             #keep the button_status unscaled
             data[i][:,[measure2index["button_status"]]]=subject[:,[measure2index["button_status"]]]
             if downsampling_factor != 1:
