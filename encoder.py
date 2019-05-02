@@ -10,7 +10,7 @@ device = torch.device("cuda" if USE_CUDA else "cpu")
 - [**Pytorch Linear doc**](https://pytorch.org/docs/stable/nn.html#torch.nn.Linear)
 - [**Pytorch Binary Cross Entropy loss (BCELoss) doc**](https://pytorch.org/docs/stable/nn.html#torch.nn.BCELoss)"""
 
-class Model(torch.nn.Module):
+class Encoder(torch.nn.Module):
     """
     Args:
         #Vanilla LSTM/GRU
@@ -31,12 +31,11 @@ class Model(torch.nn.Module):
 
         #our model
         batch_size : default : 1
-        output_size : default : 1
         is_lstm : default : True
     """
     def __init__(self, input_size, hidden_size,num_layers=1, bias=True,batch_first=False,
-                 dropout=0,bidirectional=False, batch_size=1, output_size=1,is_lstm=True):
-        super(Model, self).__init__()
+                 dropout=0,bidirectional=False, batch_size=1,is_lstm=True):
+        super(Encoder, self).__init__()
         #Vanilla LSTM/GRU
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -47,7 +46,6 @@ class Model(torch.nn.Module):
         self.bidirectional=bidirectional
         #our model
         self.batch_size = batch_size
-        self.output_size = output_size
         self.is_lstm=is_lstm
         self.reset_hidden()
         # Define the encoder (i.e. GRU or LSTM) layer
@@ -64,9 +62,6 @@ class Model(torch.nn.Module):
         #define the dropout layer
         self.dropout_layer=torch.nn.Dropout(self.dropout)
 
-        # Define the decoder layer
-        self.linear = torch.nn.Linear(self.hidden_size, self.output_size)
-        self.sigmoid = torch.nn.Sigmoid()
 
     def forward(self, input):
         # Forward pass through encoder layer
@@ -83,20 +78,10 @@ class Model(torch.nn.Module):
             # encoder_out shape should now be (seq_len, batch,hidden_size)
             encoder_out = encoder_out[: ,: ,: self.hidden_size] + encoder_out[: , :, self.hidden_size: ]
 
-        """UNABLE TO BACKPROP
-        #fake attention to take into account all hidden states
-        attn_weights=torch.Tensor(
-            [torch.exp(self.weight_coef*(1-t/encoder_out.shape[0])) for t in range(encoder_out.shape[0]) ]
-        ).unsqueeze(1).unsqueeze(1).to(device)#adds batch and hidden_size dim
-        encoding=attn_weights*encoder_out
-        encoding=torch.sum(encoding,dim=0)"""
-
         # Only take the output from the final timestep
         encoding=encoder_out[-1]
         drop=self.dropout_layer(encoding)
-        y_pred = self.linear(drop)
-        y_pred = self.sigmoid(y_pred)
-        return y_pred.squeeze(0)
+        return drop
 
     def reset_hidden(self):
         """

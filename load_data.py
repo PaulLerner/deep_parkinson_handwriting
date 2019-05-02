@@ -168,7 +168,9 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size,paper_a
             task=np.split(task,changes)
             if task[0][0][measure2index["button_status"]]!=on_paper_value:
                 task.pop(0)
-            data[j]=task
+            data[j]=task        
+        print("len(data), data[0].shape, total n° of subsequences (i.e. training examples) :")
+        print(len(data),",",len(data[0]),len(data[0][0]),len(data[0][0][0]),",",sum([len(subs) for subs in data]))
     else:
         print("the task is represented as one single sequence  (i.e. data was not transformed)")
 
