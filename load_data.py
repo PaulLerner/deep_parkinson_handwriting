@@ -66,32 +66,31 @@ def rotate(task, delta_rotate):
 
 #rotated=rotate_(task.copy(),np.pi/10)
 """
-translation=np.random.rand()-0.5#because the std is one
 h_flip=horizontal_flip(task.copy())
 v_flip=vertical_flip(task.copy())
 double_flip=horizontal_flip(v_flip.copy())
+translation=np.random.rand()-0.5#because the std is one
+translated=task.copy()
+translated[:,0]+=translation
+translated[:,1]+=translation
 #~ match the translation scale
 #as the standardized data ranges ~ from -2 to 2
 zoom_factor=np.random.uniform(0.8,1.2)
 zoomed=task.copy()
 zoomed[:,0]*=zoom_factor
-zoomed[:,1]*=zoom_factor
-translated=task.copy()
-translated[:,0]+=translation
-translated[:,1]+=translation"""
+zoomed[:,1]*=zoom_factor"""
 
 ## preprocessing
-def massage_data(task_i,compute_movement,downsampling_factor,window_size,paper_air_split=False):
-    ## Loading
-    #Cf `load_data.py`
-    data_gen=load_data()
-    data,targets=[],[]
-    for subject,label in data_gen:
-        data.append(subject)
-        targets.append(label)
-    print("(75-3 subjects, 8 tasks, X timesteps, 7 measures)")
-    print(len(data),len(data[0]),len(data[0][0]),len(data[0][0][0]))
-
+def massage_data(data,targets,task_i,compute_movement,downsampling_factor,window_size,paper_air_split=False,newhandpd=False):
+    """
+    returns data, targets
+    set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
+    Else set `task_i` to the desired task index (cf. task2index)
+    Transforms data as Zhang et al. (cf Report #5)
+    Set `downsampling_factor` to `1` if you don't want to downsample
+    Set `window_size` to `None` if you don't want to split data into subsequence of fixed length
+    Set `paper_air_split` to `False` if you don't want to split data into strokes
+    """
     ## Task selection
     #set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
     #Else set `task_i` to the desired task index (cf. task2index)
@@ -102,6 +101,9 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size,paper_a
         data=[subject[task_i] for subject in data]
         #keep only one measure
         #data=[[[raw[i][task][j][6]] for j in range(len(raw[i][task])) ]  for i,subject in enumerate(raw) if len(raw[i][task])!=0]#discard the subjects that didn't perform spiral
+    elif newhandpd:
+        print("setting task_i to -1")
+        task_i=-1
     else:
         print("task_i is None so we will use all tasks to train the model")
     print("len(data), len(targets), len(data[0]) :")
@@ -168,7 +170,7 @@ def massage_data(task_i,compute_movement,downsampling_factor,window_size,paper_a
             task=np.split(task,changes)
             if task[0][0][measure2index["button_status"]]!=on_paper_value:
                 task.pop(0)
-            data[j]=task        
+            data[j]=task
         print("len(data), data[0].shape, total n° of subsequences (i.e. training examples) :")
         print(len(data),",",len(data[0]),len(data[0][0]),len(data[0][0][0]),",",sum([len(subs) for subs in data]))
     else:

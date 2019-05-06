@@ -7,8 +7,8 @@ USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda" if USE_CUDA else "cpu")
 ## step
 
-def step(input, target, model, optimizer, loss_fn, batch_size, decoder=None,
-         decoder_optimizer = None, clip=None,validation = False):
+def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validation = False, decoder=None,
+         decoder_optimizer = None):
     if not validation:
         # Zero gradients
         optimizer.zero_grad()
@@ -58,17 +58,19 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
         for index,j in super_index:
             condition_targets.append(targets[index])
             #augmentation
+            subject=data[index].copy()
+            subject[:,4:]+=np.random.randn(subject.shape[0],3)*1e-2
             if j ==0:#keep original
-                subject=data[index]
+                pass
             elif j==1:
-                subject=rotate(data[index].copy(),np.deg2rad(15))#flip(data[index].copy(),axis_i=0)
+                pass#subject[:,0]+=flip(data[index].copy(),axis_i=0)
             elif j==2:
-                subject=rotate(data[index].copy(),np.deg2rad(-15))
+                pass#subject[:,1]+=translation#rotate(data[index].copy(),np.deg2rad(-15))
             elif j==3:
-                subject=rotate(data[index].copy(),np.deg2rad(30))
+                pass#subject[:,0]+=translation#*=zoom_factor
+                #subject[:,1]#+=translation
             else:
                 raise ValueError("expected j in range(4), got {}".format(j))
-
             #numpy to tensor
             subject=torch.Tensor(subject).unsqueeze(1)#add batch dimension
             target=torch.Tensor([targets[index]])
@@ -104,10 +106,14 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
             #and add batch dimension
             subject=torch.Tensor(data[i][j]).unsqueeze(1)
             target=torch.Tensor([targets[i]])
+            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation)
+
+            """#/!\ uncomment this to use different models when paper_air_split
             if paper_air_split and not on_paper:
-                loss, prediction =step(subject,target, in_air,in_air_optimizer, loss_fn, batch_size, decoder, decoder_optimizer,clip,validation)
+                loss, prediction =step(subject,target, in_air,in_air_optimizer, loss_fn, batch_size,clip,validation, decoder, decoder_optimizer)
             else:
-                loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,decoder, decoder_optimizer, clip,validation)
+                loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,decoder, decoder_optimizer)
+            """
             if window_size is not None or paper_air_split: #subsequences => we need to save predictions for late fusion (e.g. voting)
                 predictions[i].append(prediction)
             else:#no late fusion => we just care about the label
