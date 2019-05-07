@@ -16,6 +16,13 @@ def plot_task(task):
     plt.plot(task[:,1],task[:,0])
     plt.xlabel(index2measure[1])
     plt.ylabel(index2measure[0])
+def return_metrics(tp,tn,fp,fn):
+    accuracy= (tp+tn)/(tp+tn+fp+fn)
+    sensitivity = tp/(tp+fn) if (tp+fn) != 0 else 0.0 #without condition positives the sensitivity should be 0
+    specificity = tn/(tn+fp) if (tn+fp)!= 0 else 0.0 #idem
+    ppv = tp/(tp+fp) if tp+fp != 0 else 0.0 #without predicted positives the ppv should be 0
+    npv = tn/(tn+fn) if tn+fn !=0 else 0.0 #idem
+    return accuracy,sensitivity,specificity,ppv,npv
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True

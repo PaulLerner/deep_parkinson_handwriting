@@ -132,16 +132,12 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
 
     #compute metrics
     tn, fp, fn, tp, false_i = confusion_matrix(y_true=condition_targets,y_pred=predictions)
+    accuracy,sensitivity,specificity,ppv,npv=return_metrics(tp,tn,fp,fn)
     if augmentation :
         false=[]
     elif task_i is not None:
         false=[random_index[i] for i in false_i]
     else:
         false=[random_index[i%len(random_index)] for i in false_i]
-    accuracy= (tp+tn)/(tp+tn+fp+fn)
-    sensitivity = tp/(tp+fn) if (tp+fn) != 0 else 0.0 #without condition positives the sensitivity should be 0
-    specificity = tn/(tn+fp) if (tn+fp)!= 0 else 0.0 #idem
-    ppv = tp/(tp+fp) if tp+fp != 0 else 0.0 #without predicted positives the ppv should be 0
-    npv = tn/(tn+fn) if tn+fn !=0 else 0.0 #idem
 
     return [np.mean(losses),accuracy,sensitivity,specificity,ppv,npv],false
