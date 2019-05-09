@@ -1,7 +1,5 @@
 #machine learning
 import torch
-USE_CUDA = torch.cuda.is_available()
-device = torch.device("cuda" if USE_CUDA else "cpu")
 # Model
 """Cf. Report on the code for details about the architecture of the model
 
@@ -9,6 +7,16 @@ device = torch.device("cuda" if USE_CUDA else "cpu")
 - [**Pytorch GRU doc**](https://pytorch.org/docs/stable/nn.html#torch.nn.GRU)
 - [**Pytorch Linear doc**](https://pytorch.org/docs/stable/nn.html#torch.nn.Linear)
 - [**Pytorch Binary Cross Entropy loss (BCELoss) doc**](https://pytorch.org/docs/stable/nn.html#torch.nn.BCELoss)"""
+class Attn(torch.nn.Module):
+    def __init__(self, input_size):
+
+        super(Attn, self).__init__()
+        self.input_size = input_size
+        self.weight=torch.nn.Parameter(torch.empty(input_size,1,1))
+        torch.nn.init.xavier_uniform_(self.weight)
+    def forward(self,encoder_out):
+        attn=self.weight[:len(encoder_out)]*encoder_out
+        return torch.sum(attn,dim=0)
 
 class Model(torch.nn.Module):
     """
@@ -58,9 +66,6 @@ class Model(torch.nn.Module):
             self.encoder = torch.nn.GRU(self.input_size, self.hidden_size, self.num_layers,self.bias,self.batch_first,
                             self.dropout,self.bidirectional)
 
-        #define weight coefficient for "attention"
-        #self.weight_coef=torch.nn.Parameter(torch.Tensor([-10]))
-
         #define the dropout layer
         self.dropout_layer=torch.nn.Dropout(self.dropout)
 
@@ -83,14 +88,6 @@ class Model(torch.nn.Module):
             # encoder_out shape should now be (seq_len, batch,hidden_size)
             encoder_out = encoder_out[: ,: ,: self.hidden_size] + encoder_out[: , :, self.hidden_size: ]
 
-        """UNABLE TO BACKPROP
-        #fake attention to take into account all hidden states
-        attn_weights=torch.Tensor(
-            [torch.exp(self.weight_coef*(1-t/encoder_out.shape[0])) for t in range(encoder_out.shape[0]) ]
-        ).unsqueeze(1).unsqueeze(1).to(device)#adds batch and hidden_size dim
-        encoding=attn_weights*encoder_out
-        encoding=torch.sum(encoding,dim=0)"""
-
         # Only take the output from the final timestep
         encoding=encoder_out[-1]
         drop=self.dropout_layer(encoding)
@@ -98,7 +95,7 @@ class Model(torch.nn.Module):
         y_pred = self.sigmoid(y_pred)
         return y_pred.squeeze(0)
 
-    def reset_hidden(self):
+    def reset_hidden(self,device="cuda"):
         """
         For both GRU and LSTM :
         hidden_state of shape (num_layers * num_directions, batch, hidden_size):
