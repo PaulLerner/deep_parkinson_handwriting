@@ -3,12 +3,10 @@ import torch
 import numpy as np
 from utils import *
 from load_data import flip,rotate
-USE_CUDA = torch.cuda.is_available()
-device = torch.device("cuda" if USE_CUDA else "cpu")
 ## step
 
 def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validation = False, decoder=None,
-         decoder_optimizer = None):
+         decoder_optimizer = None,device="cuda",hierarchical=False):
     if not validation:
         # Zero gradients
         optimizer.zero_grad()
@@ -16,8 +14,9 @@ def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validat
             decoder_optimizer.zero_grad()
 
     # Set device options
-    input=input.to(device)
     target=target.to(device)
+    if not hierarchical:#if hierarchical the device option is in the forward function
+        input=input.to(device)
 
     #forward pass
     output=model(input)
@@ -33,6 +32,9 @@ def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validat
             #clip encoder gradients to previent exploding
             if decoder:#model is encoder
                 torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+            elif hierarchical:
+                torch.nn.utils.clip_grad_norm_(model.layer1.parameters(), clip)
+                torch.nn.utils.clip_grad_norm_(model.layer2.parameters(), clip)
             else:
                 torch.nn.utils.clip_grad_norm_(model.encoder.parameters(), clip)
         # Adjust model weights
@@ -40,13 +42,13 @@ def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validat
         if decoder_optimizer:
             decoder_optimizer.step()
     #reset hidden state after each step (i.e. after each subject OR each task OR each subsequence)
-    model.reset_hidden()
+    model.reset_hidden(device)
     return loss.item(), output.item()
 ## epoch
 
 def epoch(data,targets, model, optimizer, loss_fn, batch_size, random_index,
 in_air =None, in_air_optimizer=None,decoder=None,decoder_optimizer=None,
-clip=None, validation=False,window_size=None,task_i=None,augmentation=False,paper_air_split=False):
+clip=None, validation=False,window_size=None,task_i=None,augmentation=False,paper_air_split=False,device="cuda",hierarchical=False):
     losses=[]
     predictions=[]
     condition_targets=[]
@@ -75,17 +77,20 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
             subject=torch.Tensor(subject).unsqueeze(1)#add batch dimension
             target=torch.Tensor([targets[index]])
 
-            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation)
+            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device)
             predictions.append(round(prediction))
             losses.append(loss)
     elif task_i is not None and window_size is None and not paper_air_split:#single task learning on the whole sequence
         for index in random_index:
             condition_targets.append(targets[index])
             #numpy to tensor
-            subject=torch.Tensor(data[index]).unsqueeze(1)#add batch dimension
+            if hierarchical:
+                subject=[torch.Tensor(seq.copy()).unsqueeze(1).to(device) for seq in data[index]]
+            else:
+                subject=torch.Tensor(data[index]).unsqueeze(1)#add batch dimension
             target=torch.Tensor([targets[index]])
 
-            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation)
+            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
             predictions.append(round(prediction))
             losses.append(loss)
 
@@ -106,7 +111,7 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
             #and add batch dimension
             subject=torch.Tensor(data[i][j]).unsqueeze(1)
             target=torch.Tensor([targets[i]])
-            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation)
+            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device)
 
             """#/!\ uncomment this to use different models when paper_air_split
             if paper_air_split and not on_paper:

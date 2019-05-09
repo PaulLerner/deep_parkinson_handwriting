@@ -135,6 +135,8 @@ def massage_data(data,targets,task_i,compute_movement,downsampling_factor,window
                 if i ==0:
                     print("and downsampling")
                 data[i]=decimate(data[i], downsampling_factor,axis=0)#then downsample
+                #rounds the button status because decimate applies a filter
+                data[i][:,[measure2index["button_status"]]]=[[round(b[0])] for b in data[i][:,[measure2index["button_status"]]]]
         else:
             warnings.warn("you're standardizing the button_status",Warning)
             for j, task in enumerate(subject):
