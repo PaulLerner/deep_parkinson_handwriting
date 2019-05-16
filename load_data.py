@@ -10,6 +10,9 @@ from scipy.signal import decimate
 import warnings
 
 def load_data():
+    """
+    data generator : yields subject data, label and age subject by subject
+    trims data with error measure (cf. data exploration)"""
     data_path=join("..","PaHaW","PaHaW_public")#/00026/00026__1_1.svc"
     folder_path=listdir(data_path)
     folder_path.sort()
@@ -17,7 +20,7 @@ def load_data():
     meta_path=join("..","PaHaW","corpus_PaHaW.csv")
     meta_data=np.loadtxt(meta_path,dtype=str,skiprows=1,delimiter=";")#skip the first line == headers
     labels=list(map(lambda x: 1 if x =="ON" else 0, meta_data[:,4]))
-
+    ages=meta_data[:,5].astype(int)
     #Subjects 46 (control), 60 (PD) and 66 (control) didn't perform the spiral !
 
     #data=[]
@@ -29,18 +32,29 @@ def load_data():
             #so we discard it
             continue
             #subject.append([])#add an empty array so that all tasks are on the same column number
-        for task in task_path:
-            path=join(data_path,folder,task)
+        for task_name in task_path:
+            path=join(data_path,folder,task_name)
             #load data as float (not int because we will need to standardize it afterwards)
             #and throw out the first line == number of lines in the file
-            subject.append(np.loadtxt(path, dtype=float, skiprows=1,delimiter=" "))
-        yield subject,labels[i]
-        #data.append(subject)
+            task=np.loadtxt(path, dtype=float, skiprows=1,delimiter=" ")
+            if task[0][measure2index["button_status"]]!=1:#exam starts in air
+                for k,timestep in enumerate(task):
+                    if(timestep[measure2index["button_status"]]==1):#wait for on paper button status
+                        break
+                #then trims the data
+                task=task[k:]
+            elif any(task[:,measure2index["timestamp"]]>1e7):#defect of recording (see data exploration)
+                task=task[:-12]
+            subject.append(task)
+        yield subject,labels[i],ages[i]
 
-    #discard the subjects that didn't perform spiral
-    #targets= [labels[i]  for i,subject in enumerate(data) if len(subject[0])!=0]
-    #data=[subject for subject in data if len(subject[0])!=0]
-    #return data, targets
+        """for i,j in [(56, 0), (9, 1), (39, 4), (67, 7)]:
+            for k,timestep in enumerate(data[i][j]):
+                if(timestep[measure2index["button_status"]]==1):#wait for on paper button status
+                    break
+            #then trims the data
+            data[i][j]=data[i][j][k:]
+        data[43][-1]=data[43][-1][:-12]"""
 
 ## augmentation
 def flip(task,axis_i):
@@ -81,19 +95,23 @@ zoomed[:,0]*=zoom_factor
 zoomed[:,1]*=zoom_factor"""
 
 ## preprocessing
-def massage_data(data,targets,task_i,compute_movement,downsampling_factor,window_size,paper_air_split=False,newhandpd=False):
-    """
-    returns data, targets
-    set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
+def compute_movement(data):
+    """Compute movement
+    Transforms data as Zhang et al. (cf Report #5)"""
+    print("computing movement\n")
+    button_i=measure2index["button_status"]
+    for i,task in enumerate(data):
+        for t in range(len(task)-1):
+            button=task[t+1][button_i]*task[t][button_i]
+            data[i][t]=task[t+1]-task[t]
+            data[i][t][button_i]=button
+        data[i]=data[i][:-1]#throw out the last point
+    return data
+
+def task_selection(data,task_i,newhandpd=False):
+    """set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
     Else set `task_i` to the desired task index (cf. task2index)
-    Transforms data as Zhang et al. (cf Report #5)
-    Set `downsampling_factor` to `1` if you don't want to downsample
-    Set `window_size` to `None` if you don't want to split data into subsequence of fixed length
-    Set `paper_air_split` to `False` if you don't want to split data into strokes
     """
-    ## Task selection
-    #set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
-    #Else set `task_i` to the desired task index (cf. task2index)
     if task_i is not None:
         print("\ntask index, name")
         print(task_i,index2task[task_i])
@@ -106,23 +124,33 @@ def massage_data(data,targets,task_i,compute_movement,downsampling_factor,window
         task_i=-1
     else:
         print("task_i is None so we will use all tasks to train the model")
-    print("len(data), len(targets), len(data[0]) :")
-    print(len(data),len(targets),len(data[0]))
+    print("len(data), len(data[0]) :")
+    print(len(data),len(data[0]))
+    return data
+def massage_data(data,targets,task_i,compute_movement,downsampling_factor,window_size,paper_air_split=False,newhandpd=False):
+    """
+    returns data, targets
+    set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
+    Else set `task_i` to the desired task index (cf. task2index)
+    Transforms data as Zhang et al. (cf Report #5)
+    Set `downsampling_factor` to `1` if you don't want to downsample
+    Set `window_size` to `None` if you don't want to split data into subsequence of fixed length
+    Set `paper_air_split` to `False` if you don't want to split data into strokes
+    """
+    data=task_selection(data,task_i,newhandpd)
 
-    ## Compute movement
-    #Transforms data as Zhang et al. (cf Report #5)
     if compute_movement:
-        print("computing movement\n")
-        button_i=measure2index["button_status"]
-        for i,task in enumerate(data):
-            for t in range(len(task)-1):
-                button=task[t+1][button_i]*task[t][button_i]
-                data[i][t]=task[t+1]-task[t]
-                data[i][t][button_i]=button
-            data[i]=data[i][:-1]#throw out the last point
+        data=compute_movement(data)
     else:
         print("\nmovement was not computed (i.e. data was not transformed)\n")
 
+    for i in range(len(data)):
+        #removes t0 from each timestamps so the time stamp measure represents the length of the exams
+        data[i][:,measure2index["timestamp"]]-=data[i][0,measure2index["timestamp"]]
+    if task_i is not None:
+        #computes overall measures and stds
+        flat=np.asarray(flat_list(data))
+        means,stds=np.mean(flat,axis=0)[measure2index["timestamp"]],np.std(flat,axis=0)[measure2index["timestamp"]]
     ## Scale then downsample (or not) then concatenate task id (or not)
     for i,subject in enumerate(data):
         if task_i is not None:
@@ -131,6 +159,8 @@ def massage_data(data,targets,task_i,compute_movement,downsampling_factor,window
             data[i]=scale(subject,axis=0)
             #keep the button_status unscaled
             data[i][:,[measure2index["button_status"]]]=subject[:,[measure2index["button_status"]]]
+            #globally scale the timestamp
+            data[i][:,[measure2index["timestamp"]]]=(subject[:,[measure2index["timestamp"]]]-means)/stds
             if downsampling_factor != 1:
                 if i ==0:
                     print("and downsampling")
