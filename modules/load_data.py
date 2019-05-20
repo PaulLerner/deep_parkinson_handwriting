@@ -1,7 +1,7 @@
 import numpy as np
 from os.path import join
 from os import listdir
-from utils import *
+from modules.utils import *
 from sklearn.preprocessing import normalize
 from sklearn.preprocessing import scale
 from sklearn.preprocessing import MinMaxScaler
@@ -127,22 +127,43 @@ def task_selection(data,task_i,newhandpd=False):
     print("len(data), len(data[0]) :")
     print(len(data),len(data[0]))
     return data
-def massage_data(data,targets,task_i,compute_movement,downsampling_factor,window_size,paper_air_split=False,newhandpd=False):
+def compute_speed_accel(data):
+    """on single task training, concatenates the instantaneous speed and acceleration to each timestep of the data.
+    Thus the data is 2 timesteps shorter (we discard the first 2)"""
+    print("computing speed and acceleration")
+    for i,task in enumerate(data):
+        speed=np.zeros((len(task)-1,1))
+        for t in range(len(task)-1):
+            speed[t][0]=np.linalg.norm(#norm of vector
+                    task[t+1][:2]-task[t][:2]#vector [y(t+1)-y(t) , x(t+1)-x(t)]
+                )
+        accel=np.zeros((len(speed)-1,1))
+        for t in range(len(speed)-1):
+            accel[t][0]=speed[t+1]-speed[t]
+
+        #discard the 1st speed point
+        speed_accel=np.concatenate((speed[1:],accel),axis=1)
+        #discard the 2 firsts timesteps
+        data[i]=np.concatenate((task[2:],speed_accel),axis=1)
+    return data
+
+def massage_data(data,targets,task_i,compute_speed_accel_,compute_movement_,downsampling_factor,window_size,paper_air_split=False,newhandpd=False):
     """
     returns data, targets
     set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
     Else set `task_i` to the desired task index (cf. task2index)
-    Transforms data as Zhang et al. (cf Report #5)
+    compute_movement Transforms data as Zhang et al. (cf Report #5)
     Set `downsampling_factor` to `1` if you don't want to downsample
     Set `window_size` to `None` if you don't want to split data into subsequence of fixed length
     Set `paper_air_split` to `False` if you don't want to split data into strokes
     """
     data=task_selection(data,task_i,newhandpd)
-
-    if compute_movement:
+    if compute_speed_accel_:
+        data=compute_speed_accel(data)
+    elif compute_movement_:
         data=compute_movement(data)
     else:
-        print("\nmovement was not computed (i.e. data was not transformed)\n")
+        print("\nneither speed nor movement was computed (i.e. data was not transformed)\n")
 
     for i in range(len(data)):
         #removes t0 from each timestamps so the time stamp measure represents the length of the exams
