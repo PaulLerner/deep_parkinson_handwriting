@@ -2,7 +2,7 @@
 import torch
 import numpy as np
 from modules.utils import *
-from load_data import flip,rotate
+from modules.load_data import flip,rotate
 ## step
 
 def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validation = False, decoder=None,
@@ -41,8 +41,9 @@ def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validat
         optimizer.step()
         if decoder_optimizer:
             decoder_optimizer.step()
-    #reset hidden state after each step (i.e. after each subject OR each task OR each subsequence)
-    model.reset_hidden(device)
+    if not (model.__class__.__name__=='CNN1d' or model.__class__.__name__== 'TemporalConvNet'):
+        #reset hidden state after each step (i.e. after each subject OR each task OR each subsequence)
+        model.reset_hidden(device)
     return loss.item(), output.item()
 ## epoch
 
@@ -74,8 +75,12 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
             else:
                 raise ValueError("expected j in range(4), got {}".format(j))
             #numpy to tensor
-            subject=torch.Tensor(subject).unsqueeze(1)#add batch dimension
             target=torch.Tensor([targets[index]])
+            if model.__class__.__name__=='CNN1d' or model.__class__.__name__== 'TemporalConvNet':
+                subject=torch.Tensor(subject).unsqueeze(0).transpose(1,2)
+            else:
+                subject=torch.Tensor(subject).unsqueeze(1)#add batch dimension
+
 
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device)
             predictions.append(round(prediction))
@@ -86,6 +91,8 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
             #numpy to tensor
             if hierarchical:
                 subject=[torch.Tensor(seq.copy()).unsqueeze(1).to(device) for seq in data[index]]
+            elif model.__class__.__name__=='CNN1d' or model.__class__.__name__== 'TemporalConvNet':
+                subject=torch.Tensor(data[index]).unsqueeze(0).transpose(1,2)
             else:
                 subject=torch.Tensor(data[index]).unsqueeze(1)#add batch dimension
             target=torch.Tensor([targets[index]])
