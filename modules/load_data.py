@@ -147,7 +147,8 @@ def compute_speed_accel(data):
         data[i]=np.concatenate((task[2:],speed_accel),axis=1)
     return data
 
-def massage_data(data,targets,task_i,compute_speed_accel_,compute_movement_,downsampling_factor,window_size,paper_air_split=False,newhandpd=False):
+def massage_data(data,targets,task_i,compute_speed_accel_,compute_movement_,downsampling_factor,
+window_size,paper_air_split=False,newhandpd=False,max_len=None):
     """
     returns data, targets
     set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
@@ -226,6 +227,20 @@ def massage_data(data,targets,task_i,compute_speed_accel_,compute_movement_,down
             data[j]=task
         print("len(data), data[0].shape, total n° of subsequences (i.e. training examples) :")
         print(len(data),",",len(data[0]),len(data[0][0]),len(data[0][0][0]),",",sum([len(subs) for subs in data]))
+    elif max_len is not None:
+        if task_i is None:
+            raise NotImplementedError("Multi-task learning is not implemented for trimming and padding")
+        else:
+            print("trimming and padding data at {} timesteps".format(max_len))
+
+        for i,task in enumerate(data):
+
+            if len(task) > max_len:
+                data[i]=task[:max_len]
+            else:
+                data[i]=np.concatenate((task,np.zeros(shape=(max_len-len(task),7))))
+        print("\nlen(data), len(targets), len(data[0]) :")
+        print(len(data),len(targets),len(data[0]))
     else:
         print("the task is represented as one single sequence  (i.e. data was not transformed)")
 

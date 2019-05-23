@@ -41,7 +41,7 @@ def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validat
         optimizer.step()
         if decoder_optimizer:
             decoder_optimizer.step()
-    if not (model.__class__.__name__=='CNN1d' or model.__class__.__name__== 'TemporalConvNet'):
+    if model.__class__.__name__=='Encoder' or model.__class__.__name__== 'Model':
         #reset hidden state after each step (i.e. after each subject OR each task OR each subsequence)
         model.reset_hidden(device)
     return loss.item(), output.item()
@@ -76,7 +76,7 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
                 raise ValueError("expected j in range(4), got {}".format(j))
             #numpy to tensor
             target=torch.Tensor([targets[index]]).unsqueeze(0)
-            if model.__class__.__name__=='CNN1d' or model.__class__.__name__== 'TemporalConvNet':
+            if model.__class__.__name__!='Encoder' or model.__class__.__name__!= 'Model':
                 subject=torch.Tensor(subject).unsqueeze(0).transpose(1,2)
             else:
                 subject=torch.Tensor(subject).unsqueeze(1)#add batch dimension
@@ -91,7 +91,7 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
             #numpy to tensor
             if hierarchical:
                 subject=[torch.Tensor(seq.copy()).unsqueeze(1).to(device) for seq in data[index]]
-            elif model.__class__.__name__=='CNN1d' or model.__class__.__name__== 'TemporalConvNet':
+            elif model.__class__.__name__!='Encoder' or model.__class__.__name__!= 'Model':
                 subject=torch.Tensor(data[index].copy()).unsqueeze(0).transpose(1,2)
             else:
                 subject=torch.Tensor(data[index].copy()).unsqueeze(1)#add batch dimension
@@ -116,7 +116,11 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
             on_paper= data[i][j][0][measure2index["button_status"]]==on_paper_value
             #numpy to tensor
             #and add batch dimension
-            subject=torch.Tensor(data[i][j]).unsqueeze(1)
+            if model.__class__.__name__!='Encoder' or model.__class__.__name__!= 'Model':
+                subject=torch.Tensor(data[i][j]).unsqueeze(0).transpose(1,2)
+            else:
+                subject=torch.Tensor(data[i][j]).unsqueeze(1)
+
             target=torch.Tensor([targets[i]]).unsqueeze(0)
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device)
 
