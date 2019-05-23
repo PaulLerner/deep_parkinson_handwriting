@@ -15,7 +15,7 @@ class CNN1d(torch.nn.Module):
         drop=self.drop(m)
         relu=self.relu(drop)
         out=self.linear(relu)
-        return self.sigmoid(out).squeeze(0)
+        return self.sigmoid(out)
 
     def count_params(self):
         """returns (total n° of parameters, n° of trainable parameters)"""

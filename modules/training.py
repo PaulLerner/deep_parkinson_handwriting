@@ -75,7 +75,7 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
             else:
                 raise ValueError("expected j in range(4), got {}".format(j))
             #numpy to tensor
-            target=torch.Tensor([targets[index]])
+            target=torch.Tensor([targets[index]]).unsqueeze(0)
             if model.__class__.__name__=='CNN1d' or model.__class__.__name__== 'TemporalConvNet':
                 subject=torch.Tensor(subject).unsqueeze(0).transpose(1,2)
             else:
@@ -92,10 +92,10 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
             if hierarchical:
                 subject=[torch.Tensor(seq.copy()).unsqueeze(1).to(device) for seq in data[index]]
             elif model.__class__.__name__=='CNN1d' or model.__class__.__name__== 'TemporalConvNet':
-                subject=torch.Tensor(data[index]).unsqueeze(0).transpose(1,2)
+                subject=torch.Tensor(data[index].copy()).unsqueeze(0).transpose(1,2)
             else:
-                subject=torch.Tensor(data[index]).unsqueeze(1)#add batch dimension
-            target=torch.Tensor([targets[index]])
+                subject=torch.Tensor(data[index].copy()).unsqueeze(1)#add batch dimension
+            target=torch.Tensor([targets[index]]).unsqueeze(0)
 
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
             predictions.append(round(prediction))
@@ -117,7 +117,7 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
             #numpy to tensor
             #and add batch dimension
             subject=torch.Tensor(data[i][j]).unsqueeze(1)
-            target=torch.Tensor([targets[i]])
+            target=torch.Tensor([targets[i]]).unsqueeze(0)
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device)
 
             """#/!\ uncomment this to use different models when paper_air_split

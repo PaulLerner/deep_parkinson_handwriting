@@ -76,7 +76,7 @@ class TemporalConvNet(nn.Module):
         encoder_out= self.network(x)
         #like in a RNN, we feed the last output to the decoder (i.e. FC layer)
         out=self.linear(encoder_out[:,:,-1])
-        return self.sigmoid(out.squeeze(0))
+        return self.sigmoid(out)
     def count_params(self):
         """returns (total n° of parameters, n° of trainable parameters)"""
         total_params = sum(p.numel() for p in self.parameters())

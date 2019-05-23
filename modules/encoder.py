@@ -81,7 +81,7 @@ class Encoder(torch.nn.Module):
         # Only take the output from the final timestep
         encoding=encoder_out[-1]
         drop=self.dropout_layer(encoding)
-        return drop
+        return drop.unsqueeze(0)
 
     def reset_hidden(self):
         """

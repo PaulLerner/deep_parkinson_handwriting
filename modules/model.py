@@ -93,7 +93,7 @@ class Model(torch.nn.Module):
         drop=self.dropout_layer(encoding)
         y_pred = self.linear(drop)
         y_pred = self.sigmoid(y_pred)
-        return y_pred.squeeze(0)
+        return y_pred
 
     def reset_hidden(self,device="cuda"):
         """
