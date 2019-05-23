@@ -151,9 +151,3 @@ class Model(torch.nn.Module):
                     lstm.bias_hh_l4_reverse[self.hidden_size:2*self.hidden_size]=torch.ones(lstm.hidden_size)
             if lstm.num_layers>5:
                 raise NotImplementedError("you can only have max 5 layers for now")
-
-    def count_params(self):
-        """returns (total n° of parameters, n° of trainable parameters)"""
-        total_params = sum(p.numel() for p in self.parameters())
-        trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
-        return total_params, trainable_params

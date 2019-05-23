@@ -12,7 +12,11 @@ plot2index={"loss":0,"accuracy":1}
 index2plot= list(plot2index.keys())
 on_paper_value=1.0#on_paper_stroke iff button_status==1.0
 one_hot=np.identity(8)
-
+def count_params(model):
+    """returns (total n° of parameters, n° of trainable parameters)"""
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return total_params, trainable_params
 def plot_task(task):
     plt.plot(task[:,1],task[:,0])
     plt.xlabel(index2measure[1])
