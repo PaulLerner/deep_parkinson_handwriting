@@ -1,6 +1,7 @@
 import numpy as np
 from time import time
 import matplotlib.pyplot as plt
+
 measure2index={"y-coordinate":0,"x-coordinate":1,"timestamp":2, "button_status":3,"tilt":4, "elevation":5,"pressure":6,
 "speed":7,"acceleration":8}
 index2measure=list(measure2index.keys())
@@ -12,6 +13,13 @@ plot2index={"loss":0,"accuracy":1}
 index2plot= list(plot2index.keys())
 on_paper_value=1.0#on_paper_stroke iff button_status==1.0
 one_hot=np.identity(8)
+
+
+def get_out_size(in_size,padding,dilation,kernel_size,stride):
+    """computes output size after a conv or a pool layer"""
+    return (in_size+2*padding-dilation*(kernel_size-1)-1)//stride +1
+def min_max_scale(data,min_=0,max_=1):
+    return (max_-min_)*(data-np.min(data)/(np.max(data)-np.min(data)))+min_
 def count_params(model):
     """returns (total n° of parameters, n° of trainable parameters)"""
     total_params = sum(p.numel() for p in model.parameters())
@@ -21,6 +29,13 @@ def plot_task(task):
     plt.plot(task[:,1],task[:,0])
     plt.xlabel(index2measure[1])
     plt.ylabel(index2measure[0])
+def plot_measures(task):
+    plt.figure(figsize=(16,12))
+    for i,measure in enumerate(index2measure[:-2]):
+        plt.subplot(3,3,i+1)
+        plt.plot(task[:,i])
+        plt.xlabel("timesteps")
+        plt.ylabel(measure)
 def return_metrics(tp,tn,fp,fn):
     accuracy= (tp+tn)/(tp+tn+fp+fn)
     sensitivity = tp/(tp+fn) if (tp+fn) != 0 else 0.0 #without condition positives the sensitivity should be 0
