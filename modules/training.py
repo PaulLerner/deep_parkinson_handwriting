@@ -44,12 +44,16 @@ def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validat
     if model.__class__.__name__=='Encoder' or model.__class__.__name__== 'Model':
         #reset hidden state after each step (i.e. after each subject OR each task OR each subsequence)
         model.reset_hidden(device)
-    return loss.item(), output.item()
+    if batch_size==1:
+        return loss.item(), output.item()
+    else:
+        return loss.item(), output.squeeze().cpu().detach().numpy()
 ## epoch
 
 def epoch(data,targets, model, optimizer, loss_fn, batch_size, random_index,
 in_air =None, in_air_optimizer=None,decoder=None,decoder_optimizer=None,
-clip=None, validation=False,window_size=None,task_i=None,augmentation=False,paper_air_split=False,device="cuda",hierarchical=False):
+clip=None, validation=False,window_size=None,task_i=None,augmentation=False,
+paper_air_split=False,device="cuda",hierarchical=False):
     losses=[]
     predictions=[]
     condition_targets=[]
@@ -57,6 +61,8 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
     if augmentation:
         #i is subject index and j is tranformation index
         super_index=[(index,j) for index in random_index for j in range(4)]# 4 because 3 transforms + original
+
+        np.random.seed(1)
         np.random.shuffle(super_index)
         for index,j in super_index:
             condition_targets.append(targets[index])
@@ -86,25 +92,37 @@ clip=None, validation=False,window_size=None,task_i=None,augmentation=False,pape
             predictions.append(round(prediction))
             losses.append(loss)
     elif task_i is not None and window_size is None and not paper_air_split:#single task learning on the whole sequence
-        for index in random_index:
-            condition_targets.append(targets[index])
-            #numpy to tensor
-            if hierarchical:
-                subject=[torch.Tensor(seq.copy()).unsqueeze(1).to(device) for seq in data[index]]
-            elif model.__class__.__name__!='Encoder' or model.__class__.__name__!= 'Model':
-                subject=torch.Tensor(data[index].copy()).unsqueeze(0).transpose(1,2)
-            else:
-                subject=torch.Tensor(data[index].copy()).unsqueeze(1)#add batch dimension
-            target=torch.Tensor([targets[index]]).unsqueeze(0)
+        if batch_size==1:
+            for index in random_index:
+                condition_targets.append(targets[index])
+                #numpy to tensor
+                if hierarchical:
+                    if model.__class__.__name__!='Encoder' or model.__class__.__name__!= 'Model':
+                        subject=[torch.Tensor(seq.copy()).unsqueeze(0).transpose(1,2).to(device) for seq in data[index]]
+                    else:
+                        subject=[torch.Tensor(seq.copy()).unsqueeze(1).to(device) for seq in data[index]]
+                elif model.__class__.__name__!='Encoder' or model.__class__.__name__!= 'Model':
+                    subject=torch.Tensor(data[index].copy()).unsqueeze(0).transpose(1,2)
+                else:
+                    subject=torch.Tensor(data[index].copy()).unsqueeze(1)#add batch dimension
+                target=torch.Tensor([targets[index]]).unsqueeze(0)
 
-            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
-            predictions.append(round(prediction))
-            losses.append(loss)
+                loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
+                predictions.append(round(prediction))
+                losses.append(loss)
+        else:
+            condition_targets=targets[random_index]
+            tensor_data=torch.Tensor(data[random_index]).transpose(1,2)
+            tensor_targets=torch.Tensor(targets[random_index]).unsqueeze(1)
+            losses, predictions =step(tensor_data,tensor_targets, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
+            predictions=list(map(round,predictions))
+
 
     #multitask learning (early fusion) OR single task learning on subsequences (either fixed window size or strokes)
     elif task_i is None or window_size is not None or paper_air_split:
         #if multitask learning len(data[i]) == 8 because 8 tasks
         super_index=[(i,j) for i in random_index for j in range(len(data[i]))]
+        np.random.seed(1)
         np.random.shuffle(super_index)
         if window_size is not None or paper_air_split: #subsequences => we need to save predictions for late fusion (e.g. voting)
             predictions=dict(zip(random_index,[[] for _ in random_index]))

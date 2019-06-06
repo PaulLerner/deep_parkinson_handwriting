@@ -147,8 +147,56 @@ def compute_speed_accel(data):
         data[i]=np.concatenate((task[2:],speed_accel),axis=1)
     return data
 
+def LetterSplit(data,task_i):
+    if task_i==task2index["l"]:
+        print("Merging strokes into letters")
+        for j in range(len(data)):
+            tmp=[]
+            for i in range(0,len(data[j]),2):
+                try :
+                    data[j][i+1]
+                except IndexError:
+                    tmp.append(data[j][i])
+                else:
+                    tmp.append(np.concatenate((data[j][i],data[j][i+1]),axis=0))
+            data[j]=tmp
+        def pop(i,j):
+            data[i][j-1]=np.concatenate((data[i][j-1],data[i][j]))
+            data[i].pop(j)
+        pop(22,1)
+        pop(26,2)
+        pop(36,5)
+        pop(37,1)
+        pop(41,4)
+        pop(46,4)
+        pop(48,1)
+        pop(3,4)
+        pop(3,2)
+        pop(6,3)
+        pop(6,4)
+        pop(14,6)
+        pop(14,4)
+        pop(14,2)
+        pop(16,6)
+        pop(16,4)
+        pop(16,2)
+        pop(21,5)
+        pop(71,6)
+        pop(71,2)
+        #Subjects 12, 21, 23,  44, 67 did 6 l instead of 5
+        assert [i for i,s in enumerate(data) if len(s) != 5]==[12, 21, 23, 44, 67]
+        #if you want to have a hierarchical model you need the same number of sequence
+        #for each subject
+        for i in [12, 21, 23, 44, 67]:
+            data[i].pop()
+
+        assert [i for i,s in enumerate(data) if len(s) != 5]==[]
+        return data
+    else:
+        raise ValueError("letter_split is only available for the l task, got task =={}".format(index2task[task_i]))
+
 def massage_data(data,targets,task_i,compute_speed_accel_,compute_movement_,downsampling_factor,
-window_size,paper_air_split=False,newhandpd=False,max_len=None):
+window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=False):
     """
     returns data, targets
     set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
@@ -165,46 +213,9 @@ window_size,paper_air_split=False,newhandpd=False,max_len=None):
         data=compute_movement(data)
     else:
         print("\nneither speed nor movement was computed (i.e. data was not transformed)\n")
-
     for i in range(len(data)):
         #removes t0 from each timestamps so the time stamp measure represents the length of the exams
         data[i][:,measure2index["timestamp"]]-=data[i][0,measure2index["timestamp"]]
-    if task_i is not None:
-        #computes overall measures and stds
-        flat=np.asarray(flat_list(data))
-        means,stds=np.mean(flat,axis=0)[measure2index["timestamp"]],np.std(flat,axis=0)[measure2index["timestamp"]]
-    ## Scale then downsample (or not) then concatenate task id (or not)
-    for i,subject in enumerate(data):
-        if task_i is not None:
-            if i ==0:
-                print("scaling",end=" ")
-            data[i]=scale(subject,axis=0)
-            #keep the button_status unscaled
-            data[i][:,[measure2index["button_status"]]]=subject[:,[measure2index["button_status"]]]
-            #globally scale the timestamp
-            data[i][:,[measure2index["timestamp"]]]=(subject[:,[measure2index["timestamp"]]]-means)/stds
-            if downsampling_factor != 1:
-                if i ==0:
-                    print("and downsampling")
-                data[i]=decimate(data[i], downsampling_factor,axis=0)#then downsample
-                #rounds the button status because decimate applies a filter
-                data[i][:,[measure2index["button_status"]]]=[[round(b[0])] for b in data[i][:,[measure2index["button_status"]]]]
-        else:
-            warnings.warn("you're standardizing the button_status",Warning)
-            for j, task in enumerate(subject):
-                if downsampling_factor==1:#don't downsample
-                    if i ==0 and j ==0:
-                        print("scaling and concatenating task id")
-                    #concatenate task id and actual measures
-                    data[i][j]=np.concatenate(
-                        ([one_hot[j] for _ in range(len(task))],#create a matrix of the same shape as the task
-                         scale(task,axis=0)),#scales the task
-                        axis=1)#then concatenate the two
-                else:
-                    raise NotImplementedError("downsampling is not implemented for Multi-task learning")
-    print("\nlen(data), len(targets), len(data[0]) :")
-    print(len(data),len(targets),len(data[0]))
-
     ## Split in subsequence (or not)
     #Set `window_size` to `None` if you don't want to split data into subsequence of fixed length
     overlap=90
@@ -222,26 +233,88 @@ window_size,paper_air_split=False,newhandpd=False,max_len=None):
                 if task[i][measure2index["button_status"]]!=task[i+1][measure2index["button_status"]]:
                     changes.append(i+1)
             task=np.split(task,changes)
-            if task[0][0][measure2index["button_status"]]!=on_paper_value:
-                task.pop(0)
             data[j]=task
+        if letter_split:
+            data=LetterSplit(data,task_i)
         print("len(data), data[0].shape, total n° of subsequences (i.e. training examples) :")
         print(len(data),",",len(data[0]),len(data[0][0]),len(data[0][0][0]),",",sum([len(subs) for subs in data]))
-    elif max_len is not None:
+    else:
+        print("the task is represented as one single sequence  (i.e. data was not transformed)")
+
+    if window_size is not None or paper_air_split:#subsequences
+        for i,subject in enumerate(data):
+            for j,sub in enumerate(subject):
+                #removes t0 from each timestamps so the time stamp measure represents the length of the exams
+                data[i][j][:,measure2index["timestamp"]]-=data[i][j][0,measure2index["timestamp"]]
+            #computes overall measures and stds
+            flat=np.asarray(flat_list(flat_list(data)))
+            means,stds=np.mean(flat,axis=0)[measure2index["timestamp"]],np.std(flat,axis=0)[measure2index["timestamp"]]
+        for i,subject in enumerate(data):
+            if i ==0:
+                print("scaling",end=" ")
+            for j,sub in enumerate(subject):
+                data[i][j]=scale(sub,axis=0)
+                #keep the button_status unscaled
+                data[i][j][:,[measure2index["button_status"]]]=sub[:,[measure2index["button_status"]]]
+                #globally scale the timestamp
+                data[i][j][:,[measure2index["timestamp"]]]=(sub[:,[measure2index["timestamp"]]]-means)/stds
+                if downsampling_factor != 1:
+                    if i ==0 and j==0:
+                        print("and downsampling")
+                    data[i][j]=decimate(data[i][j], downsampling_factor,axis=0)#then downsample
+                    #rounds the button status because decimate applies a filter
+                    data[i][j][:,[measure2index["button_status"]]]=[[round(b[0])] for b in data[i][j][:,[measure2index["button_status"]]]]
+    else:
+        #computes overall measures and stds
+        flat=np.asarray(flat_list(data))
+        means,stds=np.mean(flat,axis=0)[measure2index["timestamp"]],np.std(flat,axis=0)[measure2index["timestamp"]]
+        ## Scale then downsample (or not) then concatenate task id (or not)
+        for i,subject in enumerate(data):
+            if task_i is not None:
+                if i ==0:
+                    print("scaling",end=" ")
+                data[i]=scale(subject,axis=0)
+                #keep the button_status unscaled
+                data[i][:,[measure2index["button_status"]]]=subject[:,[measure2index["button_status"]]]
+                #globally scale the timestamp
+                data[i][:,[measure2index["timestamp"]]]=(subject[:,[measure2index["timestamp"]]]-means)/stds
+                if downsampling_factor != 1:
+                    if i ==0:
+                        print("and downsampling")
+                    data[i]=decimate(data[i], downsampling_factor,axis=0)#then downsample
+                    #rounds the button status because decimate applies a filter
+                    data[i][:,[measure2index["button_status"]]]=[[round(b[0])] for b in data[i][:,[measure2index["button_status"]]]]
+            else:
+                warnings.warn("you're standardizing the button_status",Warning)
+                for j, task in enumerate(subject):
+                    if downsampling_factor==1:#don't downsample
+                        if i ==0 and j ==0:
+                            print("scaling and concatenating task id")
+                        #concatenate task id and actual measures
+                        data[i][j]=np.concatenate(
+                            ([one_hot[j] for _ in range(len(task))],#create a matrix of the same shape as the task
+                             scale(task,axis=0)),#scales the task
+                            axis=1)#then concatenate the two
+                    else:
+                        raise NotImplementedError("downsampling is not implemented for Multi-task learning")
+    if max_len is not None:
         if task_i is None:
             raise NotImplementedError("Multi-task learning is not implemented for trimming and padding")
         else:
             print("trimming and padding data at {} timesteps".format(max_len))
 
         for i,task in enumerate(data):
-
             if len(task) > max_len:
                 data[i]=task[:max_len]
             else:
                 data[i]=np.concatenate((task,np.zeros(shape=(max_len-len(task),7))))
+        print("converting data to numpy array")
+        data=np.asarray(data)
+        print("data shape :",data.shape)
+    else:
         print("\nlen(data), len(targets), len(data[0]) :")
         print(len(data),len(targets),len(data[0]))
-    else:
-        print("the task is represented as one single sequence  (i.e. data was not transformed)")
+
+
 
     return data, targets
