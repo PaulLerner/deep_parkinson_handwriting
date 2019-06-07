@@ -68,7 +68,11 @@ paper_air_split=False,device="cuda",hierarchical=False):
             condition_targets.append(targets[index])
             #augmentation
             subject=data[index].copy()
-            subject[:,4:]+=np.random.randn(subject.shape[0],3)*1e-2
+            if hierarchical:
+                for k,sub in enumerate(subject):
+                    subject[k][:,4:]+=np.random.randn(sub.shape[0],3)*1e-2
+            else:
+                subject[:,4:]+=np.random.randn(subject.shape[0],3)*1e-2
             if j ==0:#keep original
                 pass
             elif j==1:
@@ -83,12 +87,15 @@ paper_air_split=False,device="cuda",hierarchical=False):
             #numpy to tensor
             target=torch.Tensor([targets[index]]).unsqueeze(0)
             if model.__class__.__name__!='Encoder' or model.__class__.__name__!= 'Model':
-                subject=torch.Tensor(subject).unsqueeze(0).transpose(1,2)
+                if hierarchical:
+                    subject=[torch.Tensor(seq.copy()).unsqueeze(0).transpose(1,2).to(device) for seq in subject]
+                else:
+                    subject=torch.Tensor(subject).unsqueeze(0).transpose(1,2)
             else:
                 subject=torch.Tensor(subject).unsqueeze(1)#add batch dimension
 
 
-            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device)
+            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
             predictions.append(round(prediction))
             losses.append(loss)
     elif task_i is not None and window_size is None and not paper_air_split:#single task learning on the whole sequence
@@ -140,13 +147,13 @@ paper_air_split=False,device="cuda",hierarchical=False):
                 subject=torch.Tensor(data[i][j]).unsqueeze(1)
 
             target=torch.Tensor([targets[i]]).unsqueeze(0)
-            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device)
+            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device,hierarchical=hierarchical)
 
             """#/!\ uncomment this to use different models when paper_air_split
             if paper_air_split and not on_paper:
-                loss, prediction =step(subject,target, in_air,in_air_optimizer, loss_fn, batch_size,clip,validation, decoder, decoder_optimizer)
+                loss, prediction =step(subject,target, in_air,in_air_optimizer, loss_fn, batch_size,clip,validation, decoder, decoder_optimizer,device=device,hierarchical=hierarchical)
             else:
-                loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,decoder, decoder_optimizer)
+                loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,decoder, decoder_optimizer,device=device,hierarchical=hierarchical)
             """
             if window_size is not None or paper_air_split: #subsequences => we need to save predictions for late fusion (e.g. voting)
                 predictions[i].append(prediction)
