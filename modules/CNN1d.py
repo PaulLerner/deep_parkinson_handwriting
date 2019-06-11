@@ -1,4 +1,6 @@
 import torch
+from modules.utils import get_out_size
+
 class CNN1d(torch.nn.Module):
     def __init__(self,input_size,seq_len,hidden_size,conv_kernel,pool_kernel ,padding=0,
                  stride=1,dilation=1, dropout=0.0,output_size=1,fold=0):

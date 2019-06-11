@@ -1,4 +1,5 @@
 import torch
+from modules.utils import get_out_size
 
 class HierarchicalCNN1d(torch.nn.Module):
     """cf. report on the CNN code"""
