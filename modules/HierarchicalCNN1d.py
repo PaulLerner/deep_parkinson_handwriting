@@ -10,7 +10,7 @@ class HierarchicalCNN1d(torch.nn.Module):
         if fold ==0:
             print("seq_len :",out_size)
         #dilation=dilation_factor**0
-        self.conv1=weight_norm(
+        self.conv1=torch.nn.utils.weight_norm(
             torch.nn.Conv1d(input_size,hidden_size[0],conv_kernel[0],stride=1,padding=padding,dilation=dilation[0]))
         self.relu1=torch.nn.ReLU()
         out_size=get_out_size(out_size,padding,dilation[0],conv_kernel[0],stride=1)
@@ -30,7 +30,7 @@ class HierarchicalCNN1d(torch.nn.Module):
         while out_size <1:
             conv_kernel[1]-=1
             out_size=get_out_size(out_size,padding,dilation[1],conv_kernel[1],stride=1)
-        self.conv2=weight_norm(
+        self.conv2=torch.nn.utils.weight_norm(
             torch.nn.Conv1d(hidden_size[0],hidden_size[1],conv_kernel[1],stride=1,padding=0,dilation=dilation[1]))
         self.relu2=torch.nn.ReLU()
         if fold ==0:
