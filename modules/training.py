@@ -124,7 +124,6 @@ paper_air_split=False,device="cuda",hierarchical=False):
             losses, predictions =step(tensor_data,tensor_targets, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
             predictions=list(map(round,predictions))
 
-
     #multitask learning (early fusion) OR single task learning on subsequences (either fixed window size or strokes)
     elif task_i is None or window_size is not None or paper_air_split:
         #if multitask learning len(data[i]) == 8 because 8 tasks
@@ -163,7 +162,6 @@ paper_air_split=False,device="cuda",hierarchical=False):
     else:
         raise NotImplementedError("check readme or code.")
 
-
     if window_size is not None or paper_air_split: #subsequences => we need fuse the predictions of each sub seq (e.g. voting)
         #average over each model's prediction : choose between this and majority voting
         predictions=[round(np.mean(sub)) for sub in list(predictions.values())]
@@ -171,14 +169,4 @@ paper_air_split=False,device="cuda",hierarchical=False):
         #majority voting : choose between this and average fusion
         #predictions=[round(np.mean(list(map(round,sub)))) for sub in list(predictions.values())]
 
-    #compute metrics
-    tn, fp, fn, tp, false_i = confusion_matrix(y_true=condition_targets,y_pred=predictions)
-    accuracy,sensitivity,specificity,ppv,npv=return_metrics(tp,tn,fp,fn)
-    if augmentation :
-        false=[]
-    elif task_i is not None:
-        false=[random_index[i] for i in false_i]
-    else:
-        false=[random_index[i%len(random_index)] for i in false_i]
-
-    return [np.mean(losses),accuracy,sensitivity,specificity,ppv,npv],false
+    return condition_targets,predictions,np.mean(losses)#[np.mean(losses),accuracy,sensitivity,specificity,ppv,npv],false
