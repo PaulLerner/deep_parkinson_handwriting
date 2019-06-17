@@ -169,4 +169,4 @@ paper_air_split=False,device="cuda",hierarchical=False):
         #majority voting : choose between this and average fusion
         #predictions=[round(np.mean(list(map(round,sub)))) for sub in list(predictions.values())]
 
-    return condition_targets,predictions,np.mean(losses)#[np.mean(losses),accuracy,sensitivity,specificity,ppv,npv],false
+    return predictions,np.mean(losses)#[np.mean(losses),accuracy,sensitivity,specificity,ppv,npv],false

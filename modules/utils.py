@@ -62,6 +62,8 @@ def timeSince(since):
     return '%dm %ds' % (m, s)
 
 def confusion_matrix(y_true,y_pred):
+    if len(y_true)!=len(y_pred):
+        raise ValueError("y_true and y_pred should have the same shape, got {} and {}, respectively".format(len(y_true),len(y_pred)))
     tn, fp, fn, tp=0,0,0,0
     false_i=[]
     for i, (target, pred) in enumerate(list(zip(y_true,y_pred))):
