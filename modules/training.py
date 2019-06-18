@@ -68,20 +68,21 @@ paper_air_split=False,device="cuda",hierarchical=False):
             condition_targets.append(targets[index])
             #augmentation
             subject=data[index].copy()
-            if hierarchical:
+            """if hierarchical:
                 for k,sub in enumerate(subject):
                     subject[k][:,4:]+=np.random.randn(sub.shape[0],3)*1e-2
             else:
-                subject[:,4:]+=np.random.randn(subject.shape[0],3)*1e-2
+                subject[:,4:]+=np.random.randn(subject.shape[0],3)*1e-2"""
+            translation=np.random.rand()-0.5
             if j ==0:#keep original
                 pass
             elif j==1:
-                pass#subject[:,0]+=flip(data[index].copy(),axis_i=0)
+                subject[:,0]+=translation#flip(data[index].copy(),axis_i=0)
             elif j==2:
-                pass#subject[:,1]+=translation#rotate(data[index].copy(),np.deg2rad(-15))
+                subject[:,1]+=translation#rotate(data[index].copy(),np.deg2rad(-15))
             elif j==3:
-                pass#subject[:,0]+=translation#*=zoom_factor
-                #subject[:,1]#+=translation
+                subject[:,0]+=translation#*=zoom_factor
+                subject[:,1]+=translation
             else:
                 raise ValueError("expected j in range(4), got {}".format(j))
             #numpy to tensor
@@ -169,4 +170,4 @@ paper_air_split=False,device="cuda",hierarchical=False):
         #majority voting : choose between this and average fusion
         #predictions=[round(np.mean(list(map(round,sub)))) for sub in list(predictions.values())]
 
-    return predictions,np.mean(losses)#[np.mean(losses),accuracy,sensitivity,specificity,ppv,npv],false
+    return condition_targets,predictions,np.mean(losses)#[np.mean(losses),accuracy,sensitivity,specificity,ppv,npv],false

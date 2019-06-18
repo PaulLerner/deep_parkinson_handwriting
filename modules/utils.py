@@ -9,6 +9,8 @@ index2measure=list(measure2index.keys())
 task2index={"spiral":0,"l":1,"le":2 ,"les":3,"lektorka" :4,"porovnat":5,"nepopadnout":6, "tram":7}
 index2task=list(task2index.keys())
 
+max_lengths=[16071, 4226, 6615, 6827, 7993, 5783, 4423, 7676]
+
 plot2index={"loss":0,"accuracy":1}
 index2plot= list(plot2index.keys())
 on_paper_value=1.0#on_paper_stroke iff button_status==1.0
@@ -60,6 +62,14 @@ def timeSince(since):
     m = np.floor(s / 60)
     s -= m * 60
     return '%dm %ds' % (m, s)
+def ReshapeAndVote(model_train_predictions):
+    """used to fuse the predictions of n_models models after n_CV CV"""
+    n_CV=len(model_train_predictions[0])
+    n_models=len(model_train_predictions)
+    reshaped_train_predictions=[[model_train_predictions[i][j] for i in range(n_models)] for j in range(n_CV)]
+
+    voted_train_predictions=[np.around(np.mean(reshaped_train_predictions[i],axis=0)) for i in range(n_CV)]
+    return voted_train_predictions
 
 def confusion_matrix(y_true,y_pred):
     if len(y_true)!=len(y_pred):

@@ -21,6 +21,7 @@ class CNN1d(torch.nn.Module):
         #stride=pool_kernel
         self.pool1=torch.nn.MaxPool1d(pool_kernel[0],pool_kernel[0],padding,dilation=1)
         out_size=get_out_size(out_size,padding,dilation=1,kernel_size=pool_kernel[0],stride=pool_kernel[0])
+        pool1_out_size=out_size
         if fold ==0:
             print("after pool1 :",out_size)
 
@@ -30,7 +31,7 @@ class CNN1d(torch.nn.Module):
             out_size=get_out_size(out_size,padding,dilation[1],conv_kernel[1],stride=1)
             while out_size <1:
                 conv_kernel[1]-=1
-                out_size=get_out_size(out_size,padding,dilation[1],conv_kernel[1],stride=1)
+                out_size=get_out_size(pool1_out_size,padding,dilation[1],conv_kernel[1],stride=1)
             self.conv2=torch.nn.utils.weight_norm(
                 torch.nn.Conv1d(hidden_size[0],hidden_size[1],conv_kernel[1],stride=1,padding=0,dilation=dilation[1]))
             self.relu2=torch.nn.ReLU()

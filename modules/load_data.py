@@ -148,21 +148,21 @@ def compute_speed_accel(data):
     return data
 
 def LetterSplit(data,task_i):
+    print("Merging strokes into letters")
+    for j in range(len(data)):
+        tmp=[]
+        for i in range(0,len(data[j]),2):
+            try :
+                data[j][i+1]
+            except IndexError:
+                tmp.append(data[j][i])
+            else:
+                tmp.append(np.concatenate((data[j][i],data[j][i+1]),axis=0))
+        data[j]=tmp
+    def pop(i,j):
+        data[i][j-1]=np.concatenate((data[i][j-1],data[i][j]))
+        data[i].pop(j)
     if task_i==task2index["l"]:
-        print("Merging strokes into letters")
-        for j in range(len(data)):
-            tmp=[]
-            for i in range(0,len(data[j]),2):
-                try :
-                    data[j][i+1]
-                except IndexError:
-                    tmp.append(data[j][i])
-                else:
-                    tmp.append(np.concatenate((data[j][i],data[j][i+1]),axis=0))
-            data[j]=tmp
-        def pop(i,j):
-            data[i][j-1]=np.concatenate((data[i][j-1],data[i][j]))
-            data[i].pop(j)
         pop(22,1)
         pop(26,2)
         pop(36,5)
@@ -189,11 +189,36 @@ def LetterSplit(data,task_i):
         #for each subject
         for i in [12, 21, 23, 44, 67]:
             data[i].pop()
-
         assert [i for i,s in enumerate(data) if len(s) != 5]==[]
-        return data
-    else:
-        raise ValueError("letter_split is only available for the l task, got task =={}".format(index2task[task_i]))
+    elif task_i==task2index["le"]:
+        pop(3,4)
+        pop(6,5)
+        pop(6,4)
+        pop(6,2)
+        pop(9,4)
+        pop(9,3)
+        pop(11,5)
+        pop(12,1)
+        pop(13, 1)
+        pop(14, 6)
+        pop(14, 1)
+        pop(16, 5)
+        pop(18, 3)
+        pop(18, 2)
+        pop(18, 1)
+        pop(20, 3)
+        pop(26, 2)
+        pop(26, 1)
+        pop(27, 4)
+        pop(41, 5)
+        pop(41, 2)
+        pop(42, 7)
+        pop(42, 5)
+        pop(42, 3)
+        pop(65, 5)
+        pop(65, 3)
+        assert [i for i,s in enumerate(data) if len(s) != 5]==[]
+    return data
 
 def massage_data(data,targets,task_i,compute_speed_accel_,compute_movement_,downsampling_factor,
 window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=False):
@@ -301,13 +326,16 @@ window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=Fals
     if max_len is not None:
         print("trimming and padding data at {} timesteps".format(max_len))
         if task_i is None or window_size is not None or paper_air_split :
+            if task_i is not None:
+                max_len=[max_len]*len(data[0])
             for i,subject in enumerate(data):
                 for j,task in enumerate(subject):#task or subsequence
-                    if len(task) > max_len:
-                        data[i][j]=task[:max_len]
+                    if len(task) > max_len[j]:
+                        data[i][j]=task[:max_len[j]]
                     else:
-                        data[i][j]=np.concatenate((task,np.zeros(shape=(max_len-len(task),task.shape[1]))))
-        else:
+                        data[i][j]=np.concatenate((task,np.zeros(shape=(max_len[j]-len(task),task.shape[1]))))
+        else:#only one task
+            max_len=max_len[task_i]
             for i,task in enumerate(data):
                 if len(task) > max_len:
                     data[i]=task[:max_len]
