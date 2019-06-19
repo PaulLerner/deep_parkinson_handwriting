@@ -148,7 +148,8 @@ def compute_speed_accel(data):
     return data
 last_stroke_in_air_index=[[],#spiral
     [4, 36, 71],#l
-    [11, 14, 16, 42]#le
+    [11, 14, 16, 42],#le
+    [1, 13, 14, 20, 54]#les
 ]
 non_letters_indexes=[[],#spiral
     [(22,1), (26,2), (36,5), (37,1), (41,4), (46,4), (48,1),(3,4),

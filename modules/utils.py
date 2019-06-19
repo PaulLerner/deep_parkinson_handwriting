@@ -11,7 +11,7 @@ index2task=list(task2index.keys())
 
 max_lengths=[16071, 4226, 6615, 6827, 7993, 5783, 4423, 7676]#max length per task
 token_lengths=[16071,1242,1649,1956]#max length per token
-stroke_lengths=[16071,752,1104]#max length per stroke (either on paper or in air)
+stroke_lengths=[16071,752,1104,1476]#max length per stroke (either on paper or in air)
 
 plot2index={"loss":0,"accuracy":1}
 index2plot= list(plot2index.keys())
