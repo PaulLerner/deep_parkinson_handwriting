@@ -9,14 +9,19 @@ index2measure=list(measure2index.keys())
 task2index={"spiral":0,"l":1,"le":2 ,"les":3,"lektorka" :4,"porovnat":5,"nepopadnout":6, "tram":7}
 index2task=list(task2index.keys())
 
-max_lengths=[16071, 4226, 6615, 6827, 7993, 5783, 4423, 7676]
+max_lengths=[16071, 4226, 6615, 6827, 7993, 5783, 4423, 7676]#max length per task
+token_lengths=[16071,1242,1649,1956]#max length per token
 
 plot2index={"loss":0,"accuracy":1}
 index2plot= list(plot2index.keys())
 on_paper_value=1.0#on_paper_stroke iff button_status==1.0
 one_hot=np.identity(8)
 
-
+def wrong_len_gen(data,good_len):
+    """used for splitting tasks into tokens"""
+    for i,s in enumerate(data):
+        if len(s) != good_len:
+            yield i
 def get_out_size(in_size,padding,dilation,kernel_size,stride):
     """computes output size after a conv or a pool layer"""
     return (in_size+2*padding-dilation*(kernel_size-1)-1)//stride +1

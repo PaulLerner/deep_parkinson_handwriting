@@ -163,60 +163,30 @@ def LetterSplit(data,task_i):
         data[i][j-1]=np.concatenate((data[i][j-1],data[i][j]))
         data[i].pop(j)
     if task_i==task2index["l"]:
-        pop(22,1)
-        pop(26,2)
-        pop(36,5)
-        pop(37,1)
-        pop(41,4)
-        pop(46,4)
-        pop(48,1)
-        pop(3,4)
-        pop(3,2)
-        pop(6,3)
-        pop(6,4)
-        pop(14,6)
-        pop(14,4)
-        pop(14,2)
-        pop(16,6)
-        pop(16,4)
-        pop(16,2)
-        pop(21,5)
-        pop(71,6)
-        pop(71,2)
+        for i,j in [(22,1), (26,2), (36,5), (37,1), (41,4), (46,4), (48,1),
+         (3,4), (3,2), (6,3), (6,4), (14,6), (14,4),
+          (14,2), (16,6), (16,4), (16,2), (21,5), (71,6), (71,2)]:
+          pop(i,j)
         #Subjects 12, 21, 23,  44, 67 did 6 l instead of 5
         assert [i for i,s in enumerate(data) if len(s) != 5]==[12, 21, 23, 44, 67]
-        #if you want to have a hierarchical model you need the same number of sequence
+        #if you want to have a hierarchical model fully CNN you need the same number of sequence
         #for each subject
         for i in [12, 21, 23, 44, 67]:
             data[i].pop()
         assert [i for i,s in enumerate(data) if len(s) != 5]==[]
     elif task_i==task2index["le"]:
-        pop(3,4)
-        pop(6,5)
-        pop(6,4)
-        pop(6,2)
-        pop(9,4)
-        pop(9,3)
-        pop(11,5)
-        pop(12,1)
-        pop(13, 1)
-        pop(14, 6)
-        pop(14, 1)
-        pop(16, 5)
-        pop(18, 3)
-        pop(18, 2)
-        pop(18, 1)
-        pop(20, 3)
-        pop(26, 2)
-        pop(26, 1)
-        pop(27, 4)
-        pop(41, 5)
-        pop(41, 2)
-        pop(42, 7)
-        pop(42, 5)
-        pop(42, 3)
-        pop(65, 5)
-        pop(65, 3)
+        for i,j in [(22,1), (26,2), (36,5), (37,1), (41,4), (46,4),
+         (48,1), (3,4), (3,2), (6,3), (6,4), (14,6),
+          (14,4), (14,2), (16,6), (16,4), (16,2), (21,5), (71,6), (71,2)]:
+          pop(i,j)
+        assert [i for i,s in enumerate(data) if len(s) != 5]==[]
+    elif task_i==task2index["les"]:
+        for i,j in [(1, 7),(1, 6),(3, 4),(6, 4),(6, 1),(9, 1),(13, 5),(14, 10), (14, 9), (14, 8), (14, 7),(14, 4),(14, 2),
+         (18, 4), (18, 3), (18, 2), (18, 1),(20, 8),(20, 6),(20, 4),(20, 2),(23, 4),(26, 4),(26, 1),(38, 3),
+        (48, 4),(50, 4),(54, 9),(54, 7),(54, 5),(54, 3),(54, 1),(62, 4),(65, 6),(65, 4),(65, 1)]:
+            pop(i,j)
+        for i in [1,37,62]:#did 6 les instead of 5
+            data[i].pop()
         assert [i for i,s in enumerate(data) if len(s) != 5]==[]
     return data
 
@@ -335,7 +305,6 @@ window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=Fals
                     else:
                         data[i][j]=np.concatenate((task,np.zeros(shape=(max_len[j]-len(task),task.shape[1]))))
         else:#only one task
-            max_len=max_len[task_i]
             for i,task in enumerate(data):
                 if len(task) > max_len:
                     data[i]=task[:max_len]
