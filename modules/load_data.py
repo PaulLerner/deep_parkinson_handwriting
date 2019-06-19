@@ -146,7 +146,27 @@ def compute_speed_accel(data):
         #discard the 2 firsts timesteps
         data[i]=np.concatenate((task[2:],speed_accel),axis=1)
     return data
+last_stroke_in_air_index=[[],#spiral
+    [4, 36, 71],#l
+    [11, 14, 16, 42]#le
+]
+non_letters_indexes=[[],#spiral
+    [(22,1), (26,2), (36,5), (37,1), (41,4), (46,4), (48,1),(3,4),
+    (3,2),(6,5), (6,3),  (14,6), (14,4),(14,2), (16,6), (16,4), (16,2), (21,5), (71,6), (71,2)],#l
 
+    [(3,4), (6,5), (6,4), (6,2), (9,4), (9,3), (11,5), (12,1), (13, 1),
+     (14, 6), (14, 1), (16, 5), (18, 3), (18, 2), (18, 1), (20, 3), (26, 2),
+     (26, 1), (27, 4), (41, 5), (41, 2), (42, 7), (42, 5), (42, 3), (65, 5), (65, 3)],#le
+
+      [(1, 7),(1, 6),(3, 4),(6, 4),(6, 1),(9, 1),(13, 5),(14, 10), (14, 9), (14, 8), (14, 7),(14, 4),(14, 2),
+       (18, 4), (18, 3), (18, 2), (18, 1),(20, 8),(20, 6),(20, 4),(20, 2),(23, 4),(26, 4),(26, 1),(38, 3),
+      (48, 4),(50, 4),(54, 9),(54, 7),(54, 5),(54, 3),(54, 1),(62, 4),(65, 6),(65, 4),(65, 1)]#les
+]
+too_many_letters_indexes=[[],#spiral
+    [12, 21, 23, 44, 67],#l
+    [],#le
+    [1,37,62]#les
+]
 def LetterSplit(data,task_i):
     print("Merging strokes into letters")
     for j in range(len(data)):
@@ -162,36 +182,28 @@ def LetterSplit(data,task_i):
     def pop(i,j):
         data[i][j-1]=np.concatenate((data[i][j-1],data[i][j]))
         data[i].pop(j)
-    if task_i==task2index["l"]:
-        for i,j in [(22,1), (26,2), (36,5), (37,1), (41,4), (46,4), (48,1),
-         (3,4), (3,2), (6,3), (6,4), (14,6), (14,4),
-          (14,2), (16,6), (16,4), (16,2), (21,5), (71,6), (71,2)]:
-          pop(i,j)
-        #Subjects 12, 21, 23,  44, 67 did 6 l instead of 5
-        assert [i for i,s in enumerate(data) if len(s) != 5]==[12, 21, 23, 44, 67]
-        #if you want to have a hierarchical model fully CNN you need the same number of sequence
-        #for each subject
-        for i in [12, 21, 23, 44, 67]:
-            data[i].pop()
-        assert [i for i,s in enumerate(data) if len(s) != 5]==[]
-    elif task_i==task2index["le"]:
-        for i,j in [(22,1), (26,2), (36,5), (37,1), (41,4), (46,4),
-         (48,1), (3,4), (3,2), (6,3), (6,4), (14,6),
-          (14,4), (14,2), (16,6), (16,4), (16,2), (21,5), (71,6), (71,2)]:
-          pop(i,j)
-        assert [i for i,s in enumerate(data) if len(s) != 5]==[]
-    elif task_i==task2index["les"]:
-        for i,j in [(1, 7),(1, 6),(3, 4),(6, 4),(6, 1),(9, 1),(13, 5),(14, 10), (14, 9), (14, 8), (14, 7),(14, 4),(14, 2),
-         (18, 4), (18, 3), (18, 2), (18, 1),(20, 8),(20, 6),(20, 4),(20, 2),(23, 4),(26, 4),(26, 1),(38, 3),
-        (48, 4),(50, 4),(54, 9),(54, 7),(54, 5),(54, 3),(54, 1),(62, 4),(65, 6),(65, 4),(65, 1)]:
-            pop(i,j)
-        for i in [1,37,62]:#did 6 les instead of 5
-            data[i].pop()
-        assert [i for i,s in enumerate(data) if len(s) != 5]==[]
+    for i,j in non_letters_indexes[task_i]:
+        pop(i,j)
+    for i in too_many_letters_indexes[task_i]:
+        data[i].pop()
+    assert [i for i,s in enumerate(data) if len(s) != 5]==[]
     return data
 
+def DiscardNonLetters(data,task_i):
+    print("discarding non letters from stroke list")
+    for i,j in non_letters_indexes[task_i]:
+        if 2*j+1<len(data[i]):
+            data[i].pop(2*j+1)
+        data[i].pop(2*j)
+    for i in too_many_letters_indexes[task_i]:#did 6 l instead of 5
+        data[i].pop()
+        data[i].pop()
+    for i in last_stroke_in_air_index[task_i]:#in air stroke after last l
+        data[i].pop()
+    assert [i for i,s in enumerate(data) if len(s) != 9]==[]
+    return data
 def massage_data(data,targets,task_i,compute_speed_accel_,compute_movement_,downsampling_factor,
-window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=False):
+window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=False,discard_non_letters=False):
     """
     returns data, targets
     set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
@@ -230,6 +242,8 @@ window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=Fals
                 data[j]=task
             if letter_split:
                 data=LetterSplit(data,task_i)
+            elif discard_non_letters:
+                data=DiscardNonLetters(data,task_i)
             print("len(data), data[0].shape, total n° of subsequences (i.e. training examples) :")
             print(len(data),",",len(data[0]),len(data[0][0]),len(data[0][0][0]),",",sum([len(subs) for subs in data]))
         else:

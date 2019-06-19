@@ -1,17 +1,21 @@
+from modules.utils import on_paper_value,get_out_size, measure2index
 import torch
-from modules.utils import get_out_size
 
-class HierarchicalCNN1d(torch.nn.Module):
-    """cf. report on the CNN code"""
+class HierarchicalStrokeCNN1d(torch.nn.Module):
+    """similar to HierarchicalCNN1d except that there's two separate convolutional layers
+    for on_paper and in_air strokes
+    The on_paper and in_air convs share the same hyperparameters (e.g. kernel size)"""
     def __init__(self,input_size,seq_len,hidden_size,conv_kernel,pool_kernel ,padding=0,
                  stride=1,dilation=1, dropout=0.0,output_size=1,fold=0):
-        super(HierarchicalCNN1d, self).__init__()
+        super(HierarchicalStrokeCNN1d, self).__init__()
 
         out_size=seq_len
         if fold ==0:
             print("seq_len :",out_size)
         #dilation=dilation_factor**0
         self.conv1=torch.nn.utils.weight_norm(
+            torch.nn.Conv1d(input_size,hidden_size[0],conv_kernel[0],stride=1,padding=padding,dilation=dilation[0]))
+        self.conv1_air=torch.nn.utils.weight_norm(
             torch.nn.Conv1d(input_size,hidden_size[0],conv_kernel[0],stride=1,padding=padding,dilation=dilation[0]))
         self.relu1=torch.nn.ReLU()
         out_size=get_out_size(out_size,padding,dilation[0],conv_kernel[0],stride=1)
@@ -21,7 +25,7 @@ class HierarchicalCNN1d(torch.nn.Module):
         out_size=get_out_size(out_size,padding,dilation=1,kernel_size=pool_kernel[0],stride=pool_kernel[0])
         if fold ==0:
             print("after pool1 :",out_size)
-        out_size*=5#5 because we concat 5 ls
+        out_size*=9#9 because we concat 5 ls stroke on paper + 4 in air strokes between the 5 ls
         if fold ==0:
             print("after concat :",out_size)
         self.drop1=torch.nn.Dropout(dropout)
@@ -56,7 +60,10 @@ class HierarchicalCNN1d(torch.nn.Module):
         #save_flat=[]
         save_feats=[]
         for seq in subject:
-            c1=self.conv1(seq)
+            if seq[0][measure2index["button_status"]][0]==on_paper_value:
+                c1=self.conv1(seq)
+            else:
+                c1=self.conv1_air(seq)
             r1=self.relu1(c1)
             p1=self.pool1(r1)
 
