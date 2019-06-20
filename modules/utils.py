@@ -11,8 +11,8 @@ index2task=list(task2index.keys())
 
 max_lengths=[16071, 4226, 6615, 6827, 7993, 5783, 4423, 7676]#max length per task
 token_lengths=[16071,1242,1649,1956]#max length per token
-stroke_lengths=[16071,752,1104,1476]#max length per stroke (either on paper or in air)
-
+stroke_lengths=[16071,752,1104,1476,3568,2057,2267,1231]#max length per stroke (either on paper or in air)
+max_strokes=[25,15,15,21,29,43,35, 67]#max n° of strokes per task (in air + on paper)
 plot2index={"loss":0,"accuracy":1}
 index2plot= list(plot2index.keys())
 on_paper_value=1.0#on_paper_stroke iff button_status==1.0
@@ -30,7 +30,7 @@ def CorrectPool(out_size,current_pool):
         return int(out_size/whole_ratio)
 
 def CorrectHyperparameters(input_size,seq_len,hidden_size,conv_kernel,pool_kernel ,padding=0,
-             stride=1,dilation=1, dropout=0.0,output_size=1,model_type=None):
+             stride=1,dilation=1, dropout=0.0,output_size=1,n_seq=1):
     """makes convolved size divisible by pooling kernel and computes size of sequence after convolutions"""
     out_size=seq_len
     print("seq_len :",out_size)
@@ -39,17 +39,7 @@ def CorrectHyperparameters(input_size,seq_len,hidden_size,conv_kernel,pool_kerne
     pool_kernel[0]=CorrectPool(out_size,pool_kernel[0])
     out_size=get_out_size(out_size,padding,dilation=1,kernel_size=pool_kernel[0],stride=pool_kernel[0])
     print("after pool1 :",out_size)
-    if model_type=="tcn" or model_type=="lstm" or model_type=="gru":
-        raise NotImplementedError("""CorrectHyperparameters
-        is only implemented for 1D CNNS, got {} as model_type""".format(model_type))
-    elif model_type=="cnn1d":
-        pass#no concatenation
-    elif model_type=="hcnn1d":
-        out_size*=5#5 because we concat 5 ls
-    elif model_type=="hscnn1d":
-        out_size*=9#9 because we concat 5 ls stroke on paper + 4 in air strokes between the 5 ls
-    else:
-        raise ValueError("got {} as model_type but expected one of {}".format(model_type,models))
+    out_size*=n_seq
     print("after concat (if applicable) :",out_size)
     out_size=get_out_size(out_size,padding,dilation[1],conv_kernel[1],stride=1)
     drop1_out_size=out_size

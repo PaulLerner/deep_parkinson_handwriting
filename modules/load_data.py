@@ -203,10 +203,10 @@ def DiscardNonLetters(data,task_i):
         data[i].pop()
     assert [i for i,s in enumerate(data) if len(s) != 9]==[]
     return data
-def massage_data(data,targets,task_i,compute_speed_accel_,compute_movement_,downsampling_factor,
-window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=False,discard_non_letters=False):
+def massage_data(data,task_i,compute_speed_accel_,compute_movement_,downsampling_factor,
+window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=False,discard_non_letters=False,pad_subs=False):
     """
-    returns data, targets
+    returns data
     set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
     Else set `task_i` to the desired task index (cf. task2index)
     compute_movement Transforms data as Zhang et al. (cf Report #5)
@@ -241,7 +241,7 @@ window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=Fals
                         changes.append(i+1)
                 task=np.split(task,changes)
                 data[j]=task
-            if letter_split:
+            if letter_split:#todo : rename in token split
                 data=LetterSplit(data,task_i)
             elif discard_non_letters:
                 data=DiscardNonLetters(data,task_i)
@@ -310,15 +310,25 @@ window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=Fals
                 data[i][:,[measure2index["button_status"]]]=[[round(b[0])] for b in data[i][:,[measure2index["button_status"]]]]
     if max_len is not None:
         print("trimming and padding data at {} timesteps".format(max_len))
-        if task_i is None or window_size is not None or paper_air_split :
-            if task_i is not None:
-                max_len=[max_len]*len(data[0])
+        if task_i is None :
             for i,subject in enumerate(data):
-                for j,task in enumerate(subject):#task or subsequence
+                for j,task in enumerate(subject):#task
                     if len(task) > max_len[j]:
                         data[i][j]=task[:max_len[j]]
                     else:
                         data[i][j]=np.concatenate((task,np.zeros(shape=(max_len[j]-len(task),task.shape[1]))))
+        elif window_size is not None or paper_air_split :
+            for i,subject in enumerate(data):
+                for j,sub in enumerate(subject):#sub
+                    if len(sub) > max_len:
+                        data[i][j]=sub[:max_len]
+                    else:
+                        data[i][j]=np.concatenate((sub,np.zeros(shape=(max_len-len(sub),sub.shape[1]))))
+                if pad_subs:
+                    if i == 0:
+                        print("padding # of subsequences to",max_strokes[task_i])
+                    for _ in range(max_strokes[task_i]-len(subject)):
+                        data[i].append(np.zeros(shape=(max_len,sub.shape[1])))
         else:#only one task
             for i,task in enumerate(data):
                 if len(task) > max_len:
@@ -328,4 +338,4 @@ window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=Fals
     print("converting data to numpy array")
     data=np.asarray(data)
     print("data shape :",data.shape)
-    return data, targets
+    return data
