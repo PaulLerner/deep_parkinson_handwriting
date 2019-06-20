@@ -18,6 +18,50 @@ index2plot= list(plot2index.keys())
 on_paper_value=1.0#on_paper_stroke iff button_status==1.0
 one_hot=np.identity(8)
 
+def CorrectPool(out_size,current_pool):
+    """makes convolved size divisible by pooling kernel"""
+    ratio=out_size/current_pool
+    if (ratio)%1==0:#whole number
+        return int(current_pool)
+    else:
+        whole_ratio=round(ratio)
+        if whole_ratio==0:
+            whole_ratio+=1
+        return int(out_size/whole_ratio)
+
+def CorrectHyperparameters(input_size,seq_len,hidden_size,conv_kernel,pool_kernel ,padding=0,
+             stride=1,dilation=1, dropout=0.0,output_size=1,model_type=None):
+    """makes convolved size divisible by pooling kernel and computes size of sequence after convolutions"""
+    out_size=seq_len
+    print("seq_len :",out_size)
+    out_size=get_out_size(out_size,padding,dilation[0],conv_kernel[0],stride=1)
+    print("after conv1 :",out_size)
+    pool_kernel[0]=CorrectPool(out_size,pool_kernel[0])
+    out_size=get_out_size(out_size,padding,dilation=1,kernel_size=pool_kernel[0],stride=pool_kernel[0])
+    print("after pool1 :",out_size)
+    if model_type=="tcn" or model_type=="lstm" or model_type=="gru":
+        raise NotImplementedError("""CorrectHyperparameters
+        is only implemented for 1D CNNS, got {} as model_type""".format(model_type))
+    elif model_type=="cnn1d":
+        pass#no concatenation
+    elif model_type=="hcnn1d":
+        out_size*=5#5 because we concat 5 ls
+    elif model_type=="hscnn1d":
+        out_size*=9#9 because we concat 5 ls stroke on paper + 4 in air strokes between the 5 ls
+    else:
+        raise ValueError("got {} as model_type but expected one of {}".format(model_type,models))
+    print("after concat (if applicable) :",out_size)
+    out_size=get_out_size(out_size,padding,dilation[1],conv_kernel[1],stride=1)
+    drop1_out_size=out_size
+    while out_size <1:
+        conv_kernel[1]-=1
+        out_size=get_out_size(drop1_out_size,padding,dilation[1],conv_kernel[1],stride=1)
+    print("after conv2 :",out_size)
+    pool_kernel[1]=CorrectPool(out_size,pool_kernel[1])
+    out_size=get_out_size(out_size,padding,dilation=1,kernel_size=pool_kernel[1],stride=pool_kernel[1])
+    print("after pool2 :",out_size)
+    return input_size,out_size,hidden_size,conv_kernel,pool_kernel  ,padding,stride,dilation, dropout,output_size
+
 def wrong_len_gen(data,good_len):
     """used for splitting tasks into tokens"""
     for i,s in enumerate(data):
