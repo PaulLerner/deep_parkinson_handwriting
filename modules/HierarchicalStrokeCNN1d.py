@@ -1,4 +1,4 @@
-from modules.utils import on_paper_value,get_out_size, measure2index
+from modules.utils import on_paper_value, measure2index
 import torch
 
 class HierarchicalStrokeCNN1d(torch.nn.Module):

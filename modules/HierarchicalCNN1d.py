@@ -1,5 +1,4 @@
 import torch
-from modules.utils import get_out_size
 
 class HierarchicalCNN1d(torch.nn.Module):
     """cf. report on the CNN code"""
@@ -9,7 +8,6 @@ class HierarchicalCNN1d(torch.nn.Module):
         self.conv1=torch.nn.utils.weight_norm(
             torch.nn.Conv1d(input_size,hidden_size[0],conv_kernel[0],stride=1,padding=padding,dilation=dilation[0]))
         self.relu1=torch.nn.ReLU()
-        out_size=get_out_size(out_size,padding,dilation[0],conv_kernel[0],stride=1)
         self.pool1=torch.nn.MaxPool1d(pool_kernel[0],pool_kernel[0],padding,dilation=1)
         self.drop1=torch.nn.Dropout(dropout)
         self.conv2=torch.nn.utils.weight_norm(

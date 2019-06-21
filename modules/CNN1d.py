@@ -1,5 +1,4 @@
 import torch
-from modules.utils import get_out_size
 
 class CNN1d(torch.nn.Module):
     def __init__(self,input_size,conv_seq_len,hidden_size,conv_kernel,pool_kernel ,padding=0,
@@ -7,21 +6,15 @@ class CNN1d(torch.nn.Module):
         super(CNN1d, self).__init__()
 
         self.num_layers=len(hidden_size)
-        #dilation=dilation_factor**0
         self.conv1=torch.nn.utils.weight_norm(
             torch.nn.Conv1d(input_size,hidden_size[0],conv_kernel[0],stride=1,padding=padding,dilation=dilation[0]))
         self.relu1=torch.nn.ReLU()
-        #pool_kernel=out_size#kernel_size[0][1]#
-        #stride=pool_kernel
         self.pool1=torch.nn.MaxPool1d(pool_kernel[0],pool_kernel[0],padding,dilation=1)
         if self.num_layers > 1:
             self.drop1=torch.nn.Dropout(dropout)
-            #dilation=dilation_factor**1
             self.conv2=torch.nn.utils.weight_norm(
                 torch.nn.Conv1d(hidden_size[0],hidden_size[1],conv_kernel[1],stride=1,padding=0,dilation=dilation[1]))
             self.relu2=torch.nn.ReLU()
-            #pool_kernel=out_size#kernel_size[1][1]#
-            #stride=pool_kernel
             self.pool2=torch.nn.MaxPool1d(pool_kernel[1],pool_kernel[1],padding,dilation=1)
 
         self.drop2=torch.nn.Dropout(dropout)
