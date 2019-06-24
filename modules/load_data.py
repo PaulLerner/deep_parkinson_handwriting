@@ -204,7 +204,7 @@ def DiscardNonLetters(data,task_i):
     assert [i for i,s in enumerate(data) if len(s) != 9]==[]
     return data
 def massage_data(data,task_i,compute_speed_accel_,compute_movement_,downsampling_factor,
-window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=False,discard_non_letters=False,pad_subs=False):
+window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=False,discard_non_letters=False,pad_subs=False,trim=False):
     """
     returns data
     set `task_i` to None if you want to train the model on all tasks at once (i.e. early fusion)
@@ -309,19 +309,21 @@ window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=Fals
                 #rounds the button status because decimate applies a filter
                 data[i][:,[measure2index["button_status"]]]=[[round(b[0])] for b in data[i][:,[measure2index["button_status"]]]]
     if max_len is not None:
-        print("trimming and padding data at {} timesteps".format(max_len))
+        print("padding data at {} timesteps. Trimming : {} ".format(max_len,trim))
         if task_i is None :
             for i,subject in enumerate(data):
                 for j,task in enumerate(subject):#task
                     if len(task) > max_len[j]:
-                        data[i][j]=task[:max_len[j]]
+                        if trim:
+                            data[i][j]=task[:max_len[j]]
                     else:
                         data[i][j]=np.concatenate((task,np.zeros(shape=(max_len[j]-len(task),task.shape[1]))))
         elif window_size is not None or paper_air_split :
             for i,subject in enumerate(data):
                 for j,sub in enumerate(subject):#sub
                     if len(sub) > max_len:
-                        data[i][j]=sub[:max_len]
+                        if trim:
+                            data[i][j]=sub[:max_len]
                     else:
                         data[i][j]=np.concatenate((sub,np.zeros(shape=(max_len-len(sub),sub.shape[1]))))
                 if pad_subs:
@@ -332,7 +334,8 @@ window_size,paper_air_split=False,newhandpd=False,max_len=None,letter_split=Fals
         else:#only one task
             for i,task in enumerate(data):
                 if len(task) > max_len:
-                    data[i]=task[:max_len]
+                    if trim:
+                        data[i]=task[:max_len]
                 else:
                     data[i]=np.concatenate((task,np.zeros(shape=(max_len-len(task),task.shape[1]))))
     print("converting data to numpy array")

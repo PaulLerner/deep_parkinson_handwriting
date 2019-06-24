@@ -41,15 +41,16 @@ def CorrectHyperparameters(input_size,seq_len,hidden_size,conv_kernel,pool_kerne
     print("after pool1 :",out_size)
     out_size*=n_seq
     print("after concat (if applicable) :",out_size)
-    cat_out_size=out_size
-    out_size=get_out_size(cat_out_size,padding,dilation[1],conv_kernel[1],stride=1)
-    while out_size <1:
-        conv_kernel[1]-=1
+    if len(conv_kernel) > 2:
+        cat_out_size=out_size
         out_size=get_out_size(cat_out_size,padding,dilation[1],conv_kernel[1],stride=1)
-    print("after conv2 :",out_size)
-    pool_kernel[1]=CorrectPool(out_size,pool_kernel[1])
-    out_size=get_out_size(out_size,padding,dilation=1,kernel_size=pool_kernel[1],stride=pool_kernel[1])
-    print("after pool2 :",out_size)
+        while out_size <1:
+            conv_kernel[1]-=1
+            out_size=get_out_size(cat_out_size,padding,dilation[1],conv_kernel[1],stride=1)
+        print("after conv2 :",out_size)
+        pool_kernel[1]=CorrectPool(out_size,pool_kernel[1])
+        out_size=get_out_size(out_size,padding,dilation=1,kernel_size=pool_kernel[1],stride=pool_kernel[1])
+        print("after pool2 :",out_size)
     return input_size,out_size,hidden_size,conv_kernel,pool_kernel  ,padding,stride,dilation, dropout,output_size
 
 def wrong_len_gen(data,good_len):

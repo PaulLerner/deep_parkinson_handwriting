@@ -28,13 +28,15 @@ def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validat
     if not validation:
         # Perform backpropagation
         loss.backward()
-        if clip is not None:
+        name=model.__class__.__name__
+        if clip is not None and (name=='Encoder' or name== 'Model' or name=="HierarchicalStrokeCRNN"):
             #clip encoder gradients to previent exploding
             if decoder:#model is encoder
                 torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
             elif hierarchical:
-                torch.nn.utils.clip_grad_norm_(model.layer1.parameters(), clip)
-                torch.nn.utils.clip_grad_norm_(model.layer2.parameters(), clip)
+                #torch.nn.utils.clip_grad_norm_(model.layer1.parameters(), clip)
+                #torch.nn.utils.clip_grad_norm_(model.layer2.parameters(), clip)
+                torch.nn.utils.clip_grad_norm_(model.rnn.parameters(), clip)
             else:
                 torch.nn.utils.clip_grad_norm_(model.encoder.parameters(), clip)
         # Adjust model weights
