@@ -36,7 +36,12 @@ def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validat
             elif hierarchical:
                 #torch.nn.utils.clip_grad_norm_(model.layer1.parameters(), clip)
                 #torch.nn.utils.clip_grad_norm_(model.layer2.parameters(), clip)
-                torch.nn.utils.clip_grad_norm_(model.rnn.parameters(), clip)
+                if name=="HierarchicalStrokeCRNN":
+                    torch.nn.utils.clip_grad_norm_(model.rnn.parameters(), clip)
+                else:
+                    torch.nn.utils.clip_grad_norm_(model.layer1.parameters(), clip)
+                    torch.nn.utils.clip_grad_norm_(model.layer1_air.parameters(), clip)
+                    torch.nn.utils.clip_grad_norm_(model.layer2.parameters(), clip)
             else:
                 torch.nn.utils.clip_grad_norm_(model.encoder.parameters(), clip)
         # Adjust model weights
@@ -107,11 +112,11 @@ paper_air_split=False,device="cuda",hierarchical=False):
                 condition_targets.append(targets[index])
                 #numpy to tensor
                 if hierarchical:
-                    if model.__class__.__name__!='Encoder' or model.__class__.__name__!= 'Model':
+                    if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model' and model.__class__.__name__!= 'HierarchicalRNN':
                         subject=[torch.Tensor(seq.copy()).unsqueeze(0).transpose(1,2).to(device) for seq in data[index]]
                     else:
                         subject=[torch.Tensor(seq.copy()).unsqueeze(1).to(device) for seq in data[index]]
-                elif model.__class__.__name__!='Encoder' or model.__class__.__name__!= 'Model':
+                elif model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model':
                     subject=torch.Tensor(data[index].copy()).unsqueeze(0).transpose(1,2)
                 else:
                     subject=torch.Tensor(data[index].copy()).unsqueeze(1)#add batch dimension
@@ -143,7 +148,7 @@ paper_air_split=False,device="cuda",hierarchical=False):
             on_paper= data[i][j][0][measure2index["button_status"]]==on_paper_value
             #numpy to tensor
             #and add batch dimension
-            if model.__class__.__name__!='Encoder' or model.__class__.__name__!= 'Model':
+            if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model':
                 subject=torch.Tensor(data[i][j]).unsqueeze(0).transpose(1,2)
             else:
                 subject=torch.Tensor(data[i][j]).unsqueeze(1)
