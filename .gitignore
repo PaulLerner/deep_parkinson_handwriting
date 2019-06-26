@@ -1,5 +1,9 @@
 #results is a temporary file that should be integrated to reports/experiments results
 results.csv
+
+# pycharm stuff
+.idea/
+
 #default python gitignore
 # Byte-compiled / optimized / DLL files
 __pycache__/

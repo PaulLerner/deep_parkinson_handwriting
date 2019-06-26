@@ -43,8 +43,9 @@ class HierarchicalRNN(torch.nn.Module):
         self.linear = torch.nn.Linear(self.hidden_size, self.output_size)
         self.sigmoid = torch.nn.Sigmoid()
         self.reset_hidden()
-        if self.is_lstm:
-            self.init_forget_bias()
+        #if self.is_lstm:
+            #self.init_forget_bias()
+            #gives poor result on hierarchical CRNN on l task
 
     def forward(self, input):
         """should take a subject as input
@@ -72,8 +73,9 @@ class HierarchicalRNN(torch.nn.Module):
             else:
                 self.h_1=self.layer2(hidden,self.h_1)
 
-        # Only take the output from the final timestep and remove layer dim
-        drop=self.dropout_layer(self.h_1.squeeze(0))
+        # Only take the output from the final timestep
+        drop=self.dropout_layer(self.h_1)
+        self.reset_hidden()#reset hidden state after each subject
         y_pred = self.linear(drop)
         y_pred = self.sigmoid(y_pred)
         return y_pred
@@ -97,7 +99,7 @@ class HierarchicalRNN(torch.nn.Module):
         the learnable hidden-hidden bias of the kth layer (b_hi|b_hf|b_hg|b_ho), of shape (4*hidden_size).
         So b_hf == bias_hh_lk[hidden_size:2*hidden_size]
 
-        The weights are modified in-place, like init_hidden(self).
+        The weights are modified in-place, like reset_hidden(self).
         """
         with torch.no_grad():#so the optimizer doesn't know about this ;)
             self.layer1.bias_hh[self.hidden_size:2*self.hidden_size]=torch.ones(self.hidden_size)
