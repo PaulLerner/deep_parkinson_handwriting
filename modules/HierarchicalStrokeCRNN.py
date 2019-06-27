@@ -6,9 +6,12 @@ class HierarchicalStrokeCRNN(torch.nn.Module):
     for on_paper and in_air strokes
     The on_paper and in_air convs share the same hyperparameters (e.g. kernel size)"""
     def __init__(self,input_size,conv_seq_len,hidden_size,conv_kernel,pool_kernel ,padding=0,
-                 stride=1,dilation=1, dropout=0.0,output_size=1):
+                 stride=1,dilation=1, dropout=0.0,bidirectional=False,output_size=1,is_lstm=True):
         super(HierarchicalStrokeCRNN, self).__init__()
         self.hidden_size=hidden_size
+        self.bidirectional=bidirectional
+        self.is_lstm=is_lstm
+
         self.conv1=torch.nn.utils.weight_norm(
             torch.nn.Conv1d(input_size,hidden_size[0],conv_kernel[0],stride=1,padding=padding,dilation=dilation[0]))
         self.conv1_air=torch.nn.utils.weight_norm(
@@ -16,7 +19,11 @@ class HierarchicalStrokeCRNN(torch.nn.Module):
         self.relu1=torch.nn.ReLU()
         self.pool1=torch.nn.MaxPool1d(pool_kernel[0],pool_kernel[0],padding,dilation=1)
         self.drop1=torch.nn.Dropout(dropout)
-        self.rnn=torch.nn.LSTM(hidden_size[0],hidden_size[1],1,batch_first=True)
+
+        if self.is_lstm:
+            self.rnn=torch.nn.LSTM(hidden_size[0],hidden_size[1],1,batch_first=True,bidirectional=self.bidirectional)
+        else:
+            self.rnn=torch.nn.GRU(hidden_size[0],hidden_size[1],1,batch_first=True,bidirectional=self.bidirectional)
         self.drop2=torch.nn.Dropout(dropout)
         self.linear1=torch.nn.Linear(hidden_size[-1],output_size)
         self.sigmoid=torch.nn.Sigmoid()
@@ -36,9 +43,17 @@ class HierarchicalStrokeCRNN(torch.nn.Module):
         #batch_first so input shape should be (batch, seq, feature)
         #cat shape is (batch, feature, seq) so we have to transpose (1,2)
         drop1=drop1.transpose(1,2)
-        rnn_out,last_hidden=self.rnn(drop1)
-        last_hidden=last_hidden[0].squeeze(1)#keep only last hidden state and remove layer dim
-        drop2=self.drop2(last_hidden)
+        if self.is_lstm:
+            rnn_out, (hidden_state, cell_state) = self.rnn(drop1)
+        else:#if GRU
+            rnn_out, hidden_state= self.rnn(drop1)
+        #hidden_state has shape (num_layers * num_directions,batch, hidden_size)
+        if self.bidirectional:
+            #sums the outputs : direction left-right and direction right-left
+            hidden_state=hidden_state[0]+hidden_state[1]
+
+        hidden_state=hidden_state.squeeze(1)#remove layer dim
+        drop2=self.drop2(hidden_state)
         l1=self.linear1(drop2)
         return self.sigmoid(l1)
     def init_forget_bias(self):

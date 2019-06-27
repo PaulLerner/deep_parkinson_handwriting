@@ -41,7 +41,7 @@ def CorrectHyperparameters(input_size,seq_len,hidden_size,conv_kernel,pool_kerne
     print("after pool1 :",out_size)
     out_size*=n_seq
     print("after concat (if applicable) :",out_size)
-    if len(conv_kernel) > 1:
+    if len(conv_kernel) > 1 and len(pool_kernel) > 1 :
         cat_out_size=out_size
         out_size=get_out_size(cat_out_size,padding,dilation[1],conv_kernel[1],stride=1)
         while out_size <1:

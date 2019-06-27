@@ -33,14 +33,14 @@ is done in `load_data.py`. It loads the subjetcs data and labels (1 for PD 0 for
 
  task | max duration | avg duration | avg duration std | avg duration per letters | max duration per tokens | max duration per stroke | max # of strokes | std of stroke duration | std of # of strokes
  --|--|--|--|--|--|--|--|--|--
- spiral | 16071 | 2758.75 | 2267.76 | 2758.75  | 16071| 16071|25|NA|NA
+ spiral | 16071 | 2758.75 | 2267.76 | 2758.75  | 16071| 16071|25|1715|3.57
  l | 4226|1668.01 | 724.14 | 333 | 1242|752|15|109 | 1.42
  le | 6615| 1984.16 | 999.61 | 198 | 1649|1104|15| 160 | 1.57
  les | 6827| 2305.01 | 1095.54 | 153| 1956|1476|21| 183 | 2.47
  lektorka | 7993| 2608.48 | 1333.76  | 163| ?|3568|29| 281 | 7.16
  porovnat | 5783| 2315.08 | 1033.69 |144| ?|2057|43| 198 | 8.72
  nepopadnout | 4423| 1469.29 | 650.65 | 133| ?|2267|35| 189 | 6.85
- tram | 7676| 3086.13 | 1158.81 | 146| ?|1231|67| 117 | 8.38 
+ tram | 7676| 3086.13 | 1158.81 | 146| ?|1231|67| 117 | 8.38
 
 ## Data split
 In order to provide for a meaningful comparison with works from Drotar et al. and Moetesum et al. we will evaluate our results using a 10-fold cross validation  
