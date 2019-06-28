@@ -66,6 +66,8 @@ paper_air_split=False,device="cuda",hierarchical=False):
     condition_targets=[]
 
     if augmentation:
+        if hierarchical:
+            raise NotImplementedError("augmentation is not implemented for hierarchical models, see epoch function")
         #i is subject index and j is tranformation index
         super_index=[(index,j) for index in random_index for j in range(4)]# 4 because 3 transforms + original
 
@@ -75,26 +77,22 @@ paper_air_split=False,device="cuda",hierarchical=False):
             condition_targets.append(targets[index])
             #augmentation
             subject=data[index].copy()
-            """if hierarchical:
-                for k,sub in enumerate(subject):
-                    subject[k][:,4:]+=np.random.randn(sub.shape[0],3)*1e-2
-            else:
-                subject[:,4:]+=np.random.randn(subject.shape[0],3)*1e-2"""
             translation=np.random.rand()-0.5
             if j ==0:#keep original
                 pass
             elif j==1:
-                subject[:,0]+=translation#flip(data[index].copy(),axis_i=0)
+                subject=rotate(subject,np.deg2rad(15))#translation
             elif j==2:
-                subject[:,1]+=translation#rotate(data[index].copy(),np.deg2rad(-15))
+                subject=rotate(subject,np.deg2rad(-15))
             elif j==3:
-                subject[:,0]+=translation#*=zoom_factor
-                subject[:,1]+=translation
+                #subject[:,0]+=translation#*=zoom_factor
+                subject=rotate(subject,np.deg2rad(30))
+                #subject=flip(subject,axis_i=1)
             else:
                 raise ValueError("expected j in range(4), got {}".format(j))
             #numpy to tensor
             target=torch.Tensor([targets[index]]).unsqueeze(0)
-            if model.__class__.__name__!='Encoder' or model.__class__.__name__!= 'Model':
+            if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model':
                 if hierarchical:
                     subject=[torch.Tensor(seq.copy()).unsqueeze(0).transpose(1,2).to(device) for seq in subject]
                 else:
