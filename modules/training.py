@@ -104,7 +104,7 @@ paper_air_split=False,device="cuda",hierarchical=False):
 
 
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
-            predictions.append(round(prediction))
+            predictions.append(prediction)
             losses.append(loss)
     elif task_i is not None and window_size is None and not paper_air_split:#single task learning on the whole sequence
         if batch_size==1:
@@ -123,14 +123,13 @@ paper_air_split=False,device="cuda",hierarchical=False):
                 target=torch.Tensor([targets[index]]).unsqueeze(0)
 
                 loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
-                predictions.append(round(prediction))
+                predictions.append(prediction)
                 losses.append(loss)
         else:
             condition_targets=targets[random_index]
             tensor_data=torch.Tensor(data[random_index]).transpose(1,2)
             tensor_targets=torch.Tensor(targets[random_index]).unsqueeze(1)
             losses, predictions =step(tensor_data,tensor_targets, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
-            predictions=list(map(round,predictions))
 
     #multitask learning (early fusion) OR single task learning on subsequences (either fixed window size or strokes)
     elif task_i is None or window_size is not None or paper_air_split:
@@ -165,16 +164,16 @@ paper_air_split=False,device="cuda",hierarchical=False):
             if window_size is not None or paper_air_split: #subsequences => we need to save predictions for late fusion (e.g. voting)
                 predictions[i].append(prediction)
             else:#no late fusion => we just care about the label
-                predictions.append(round(prediction))
+                predictions.append(prediction)
             losses.append(loss)
     else:
         raise NotImplementedError("check readme or code.")
 
     if window_size is not None or paper_air_split: #subsequences => we need fuse the predictions of each sub seq (e.g. voting)
         #average over each model's prediction : choose between this and majority voting
-        predictions=[round(np.mean(sub)) for sub in list(predictions.values())]
+        predictions=[np.mean(sub) for sub in list(predictions.values())]
 
         #majority voting : choose between this and average fusion
-        #predictions=[round(np.mean(list(map(round,sub)))) for sub in list(predictions.values())]
+        #predictions=[np.mean(list(map(round,sub))) for sub in list(predictions.values())]
 
     return condition_targets,predictions,np.mean(losses)#[np.mean(losses),accuracy,sensitivity,specificity,ppv,npv],false

@@ -103,11 +103,14 @@ def timeSince(since):
     m = np.floor(s / 60)
     s -= m * 60
     return '%dm %ds' % (m, s)
-def ReshapeAndVote(model_train_predictions):
+def ReshapeAndVote(model_train_predictions,round_before_voting=True):
     """used to fuse the predictions of n_models models after n_CV CV"""
     n_CV=len(model_train_predictions[0])
     n_models=len(model_train_predictions)
-    reshaped_train_predictions=[[model_train_predictions[i][j] for i in range(n_models)] for j in range(n_CV)]
+    if round_before_voting:
+        reshaped_train_predictions=[[np.around(model_train_predictions[i][j]) for i in range(n_models)] for j in range(n_CV)]
+    else:
+        reshaped_train_predictions=[[model_train_predictions[i][j] for i in range(n_models)] for j in range(n_CV)]
 
     voted_train_predictions=[np.around(np.mean(reshaped_train_predictions[i],axis=0)) for i in range(n_CV)]
     return voted_train_predictions
@@ -121,13 +124,19 @@ def confusion_matrix(y_true,y_pred):
         if target==0:#condition negative
             if pred==0:
                 tn+=1
-            else:
+            elif pred==1:
                 fp+=1
                 false_i.append(i)
-        else:#condition positive
+            else:
+                raise ValueError("model prediction should either be 0 or 1, got {}".format(pred))
+        elif target==1:#condition positive
             if pred==0:
                 fn+=1
                 false_i.append(i)
-            else:
+            elif pred ==1:
                 tp+=1
+            else:
+                raise ValueError("model prediction should either be 0 or 1, got {}".format(pred))
+        else:
+            raise ValueError("target should either be 0 or 1, got {}".format(target))
     return tn, fp, fn, tp, false_i
