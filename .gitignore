@@ -1,5 +1,6 @@
 #results is a temporary file that should be integrated to reports/experiments results
 results.csv
+.~lock.results.csv#
 
 # pycharm stuff
 .idea/

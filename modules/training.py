@@ -66,6 +66,8 @@ paper_air_split=False,device="cuda",hierarchical=False):
     condition_targets=[]
 
     if augmentation:
+        if hierarchical:
+            raise NotImplementedError("augmentation is not implemented for hierarchical models, see epoch function")
         #i is subject index and j is tranformation index
         super_index=[(index,j) for index in random_index for j in range(4)]# 4 because 3 transforms + original
 
@@ -75,26 +77,22 @@ paper_air_split=False,device="cuda",hierarchical=False):
             condition_targets.append(targets[index])
             #augmentation
             subject=data[index].copy()
-            """if hierarchical:
-                for k,sub in enumerate(subject):
-                    subject[k][:,4:]+=np.random.randn(sub.shape[0],3)*1e-2
-            else:
-                subject[:,4:]+=np.random.randn(subject.shape[0],3)*1e-2"""
             translation=np.random.rand()-0.5
             if j ==0:#keep original
                 pass
             elif j==1:
-                subject[:,0]+=translation#flip(data[index].copy(),axis_i=0)
+                subject=rotate(subject,np.deg2rad(15))#translation
             elif j==2:
-                subject[:,1]+=translation#rotate(data[index].copy(),np.deg2rad(-15))
+                subject=rotate(subject,np.deg2rad(-15))
             elif j==3:
-                subject[:,0]+=translation#*=zoom_factor
-                subject[:,1]+=translation
+                #subject[:,0]+=translation#*=zoom_factor
+                subject=rotate(subject,np.deg2rad(30))
+                #subject=flip(subject,axis_i=1)
             else:
                 raise ValueError("expected j in range(4), got {}".format(j))
             #numpy to tensor
             target=torch.Tensor([targets[index]]).unsqueeze(0)
-            if model.__class__.__name__!='Encoder' or model.__class__.__name__!= 'Model':
+            if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model':
                 if hierarchical:
                     subject=[torch.Tensor(seq.copy()).unsqueeze(0).transpose(1,2).to(device) for seq in subject]
                 else:
@@ -104,7 +102,7 @@ paper_air_split=False,device="cuda",hierarchical=False):
 
 
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
-            predictions.append(round(prediction))
+            predictions.append(prediction)
             losses.append(loss)
     elif task_i is not None and window_size is None and not paper_air_split:#single task learning on the whole sequence
         if batch_size==1:
@@ -123,14 +121,13 @@ paper_air_split=False,device="cuda",hierarchical=False):
                 target=torch.Tensor([targets[index]]).unsqueeze(0)
 
                 loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
-                predictions.append(round(prediction))
+                predictions.append(prediction)
                 losses.append(loss)
         else:
             condition_targets=targets[random_index]
             tensor_data=torch.Tensor(data[random_index]).transpose(1,2)
             tensor_targets=torch.Tensor(targets[random_index]).unsqueeze(1)
             losses, predictions =step(tensor_data,tensor_targets, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
-            predictions=list(map(round,predictions))
 
     #multitask learning (early fusion) OR single task learning on subsequences (either fixed window size or strokes)
     elif task_i is None or window_size is not None or paper_air_split:
@@ -165,16 +162,16 @@ paper_air_split=False,device="cuda",hierarchical=False):
             if window_size is not None or paper_air_split: #subsequences => we need to save predictions for late fusion (e.g. voting)
                 predictions[i].append(prediction)
             else:#no late fusion => we just care about the label
-                predictions.append(round(prediction))
+                predictions.append(prediction)
             losses.append(loss)
     else:
         raise NotImplementedError("check readme or code.")
 
     if window_size is not None or paper_air_split: #subsequences => we need fuse the predictions of each sub seq (e.g. voting)
         #average over each model's prediction : choose between this and majority voting
-        predictions=[round(np.mean(sub)) for sub in list(predictions.values())]
+        predictions=[np.mean(sub) for sub in list(predictions.values())]
 
         #majority voting : choose between this and average fusion
-        #predictions=[round(np.mean(list(map(round,sub)))) for sub in list(predictions.values())]
+        #predictions=[np.mean(list(map(round,sub))) for sub in list(predictions.values())]
 
     return condition_targets,predictions,np.mean(losses)#[np.mean(losses),accuracy,sensitivity,specificity,ppv,npv],false
