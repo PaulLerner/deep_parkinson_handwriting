@@ -18,6 +18,18 @@ index2plot= list(plot2index.keys())
 on_paper_value=1.0#on_paper_stroke iff button_status==1.0
 one_hot=np.identity(8)
 
+def get_significance(p):
+    """used to print significance of a statistic test given p-value)"""
+    if p<0.01:
+        significance="***"
+    elif p<0.05:
+        significance="**"
+    elif p<0.1:
+        significance="*"
+    else:
+        significance="_"
+    return significance
+
 def CorrectPool(out_size,current_pool):
     """makes convolved size divisible by pooling kernel"""
     ratio=out_size/current_pool
