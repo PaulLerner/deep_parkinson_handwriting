@@ -58,6 +58,7 @@ def load_data():
 
 ## augmentation
 def flip(task,axis_i):
+    warnigs.warn("flip should be deprecated and replaced by -x or -y depending on axis")
     if axis_i is not 0 and axis_i is not 1:
         raise ValueError("expected 0 or 1 for value of axis_i, got {}".format(axis_i))
     axis=task[0][axis_i]

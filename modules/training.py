@@ -59,13 +59,15 @@ def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validat
 
 def epoch(data,targets, model, optimizer, loss_fn, batch_size, random_index,
 in_air =None, in_air_optimizer=None,decoder=None,decoder_optimizer=None,
-clip=None, validation=False,window_size=None,task_i=None,augmentation=False,
-paper_air_split=False,device="cuda",hierarchical=False):
+clip=None, validation=False,window_size=None,task_i=None,augmentation=None,
+paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
+    if batch_size!=1:
+        raise NotImplementedError("batch_size sohul be 1, got {}".format(batch_size))
     losses=[]
     predictions=[]
     condition_targets=[]
 
-    if augmentation:
+    if augmentation is not None:
         if hierarchical:
             raise NotImplementedError("augmentation is not implemented for hierarchical models, see epoch function")
         #i is subject index and j is tranformation index
@@ -77,19 +79,53 @@ paper_air_split=False,device="cuda",hierarchical=False):
             condition_targets.append(targets[index])
             #augmentation
             subject=data[index].copy()
-            translation=np.random.rand()-0.5
+            translation=np.random.uniform(0.5,1.5)
+            zoom_factor=np.random.uniform(0.8,1.2)
+            crop=np.random.randint(len(subject)//10,len(subject)//5)#also worth for size of window warping
+            window_warp=np.random.randint(0,len(subject)-crop)
+            #/!\ np.aronud button_status after resampling !!
             if j ==0:#keep original
                 pass
             elif j==1:
-                subject=rotate(subject,np.deg2rad(15))#translation
+                #apply translation/zoom to all measures but button_status
+                #apply crop at the beginning
+                #apply flip on x axis
+                speed=0.9#worth both for rescaling and window warping
+                rot=np.deg2rad(15)
+                subject*=zoom_factor#rotate(subject,rot)
+                subject[:,measure2index["button_status"]]=data[index][:,measure2index["button_status"]]
             elif j==2:
-                subject=rotate(subject,np.deg2rad(-15))
+                #apply flip on y axis
+                #apply crop at the end
+                #apply translation/zoom to all measures but spatial coordinate and button_status
+                speed=1.1
+                rot=np.deg2rad(-15)
+                keep_measures=np.array([
+                    measure2index['timestamp'],
+                    measure2index['tilt'],
+                    measure2index['elevation'],
+                    measure2index['pressure'],
+                    measure2index['speed'],
+                    measure2index['acceleration']
+                ])
+                subject[keep_measures]*=zoom_factor#rotate(subject,rot)
             elif j==3:
+                #apply flip both on x and y axis
+                #apply crop both at the end and at the beginning
+                #apply translation/zoom to spatial coordinate only
+                speed=1.2
+                rot=np.deg2rad(30)
                 #subject[:,0]+=translation#*=zoom_factor
-                subject=rotate(subject,np.deg2rad(30))
+                keep_measures=np.array([
+                    measure2index['y-coordinate'],
+                    measure2index['x-coordinate']
+                ])
+                subject[keep_measures]*=zoom_factor#translation#rotate(subject,rot)
                 #subject=flip(subject,axis_i=1)
             else:
                 raise ValueError("expected j in range(4), got {}".format(j))
+            if max_len is not None:
+                subject=np.concatenate((subject,np.zeros(shape=(max_len-len(subject),subject.shape[1]))))
             #numpy to tensor
             target=torch.Tensor([targets[index]]).unsqueeze(0)
             if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model':
@@ -99,36 +135,29 @@ paper_air_split=False,device="cuda",hierarchical=False):
                     subject=torch.Tensor(subject).unsqueeze(0).transpose(1,2)
             else:
                 subject=torch.Tensor(subject).unsqueeze(1)#add batch dimension
-
-
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
             predictions.append(prediction)
             losses.append(loss)
     elif task_i is not None and window_size is None and not paper_air_split:#single task learning on the whole sequence
-        if batch_size==1:
-            for index in random_index:
-                condition_targets.append(targets[index])
-                #numpy to tensor
-                if hierarchical:
-                    if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model' and model.__class__.__name__!= 'HierarchicalRNN':
-                        subject=[torch.Tensor(seq.copy()).unsqueeze(0).transpose(1,2).to(device) for seq in data[index]]
-                    else:
-                        subject=[torch.Tensor(seq.copy()).unsqueeze(1).to(device) for seq in data[index]]
-                elif model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model':
-                    subject=torch.Tensor(data[index].copy()).unsqueeze(0).transpose(1,2)
+        for index in random_index:
+            condition_targets.append(targets[index])
+            if max_len is not None:
+                subject=np.concatenate((data[index],np.zeros(shape=(max_len-len(data[index]),data[index].shape[1]))))
+            #numpy to tensor
+            if hierarchical:
+                if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model' and model.__class__.__name__!= 'HierarchicalRNN':
+                    subject=[torch.Tensor(seq.copy()).unsqueeze(0).transpose(1,2).to(device) for seq in subject]
                 else:
-                    subject=torch.Tensor(data[index].copy()).unsqueeze(1)#add batch dimension
-                target=torch.Tensor([targets[index]]).unsqueeze(0)
+                    subject=[torch.Tensor(seq.copy()).unsqueeze(1).to(device) for seq in subject]
+            elif model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model':
+                subject=torch.Tensor(subject.copy()).unsqueeze(0).transpose(1,2)
+            else:
+                subject=torch.Tensor(subject.copy()).unsqueeze(1)#add batch dimension
+            target=torch.Tensor([targets[index]]).unsqueeze(0)
 
-                loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
-                predictions.append(prediction)
-                losses.append(loss)
-        else:
-            condition_targets=targets[random_index]
-            tensor_data=torch.Tensor(data[random_index]).transpose(1,2)
-            tensor_targets=torch.Tensor(targets[random_index]).unsqueeze(1)
-            losses, predictions =step(tensor_data,tensor_targets, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
-
+            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
+            predictions.append(prediction)
+            losses.append(loss)
     #multitask learning (early fusion) OR single task learning on subsequences (either fixed window size or strokes)
     elif task_i is None or window_size is not None or paper_air_split:
         #if multitask learning len(data[i]) == 8 because 8 tasks
