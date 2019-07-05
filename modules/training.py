@@ -1,6 +1,7 @@
 # Training
 import torch
 import numpy as np
+from scipy.signal import resample
 from modules.utils import *
 from modules.load_data import flip,rotate
 ## step
@@ -79,10 +80,10 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             condition_targets.append(targets[index])
             #augmentation
             subject=data[index].copy()
-            translation=np.random.uniform(0.5,1.5)
-            zoom_factor=np.random.uniform(0.8,1.2)
-            crop=np.random.randint(len(subject)//10,len(subject)//5)#also worth for size of window warping
-            window_warp=np.random.randint(0,len(subject)-crop)
+            #translation=np.random.uniform(0.5,1.5)
+            #zoom_factor=np.random.uniform(0.8,1.2)
+            #crop=np.random.randint(len(subject)//10,len(subject)//5)#also worth for size of window warping
+            #window_warp=np.random.randint(0,len(subject)-crop)
             #/!\ np.aronud button_status after resampling !!
             if j ==0:#keep original
                 pass
@@ -92,8 +93,9 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 #apply flip on x axis
                 speed=0.9#worth both for rescaling and window warping
                 rot=np.deg2rad(15)
-                subject*=zoom_factor#rotate(subject,rot)
-                subject[:,measure2index["button_status"]]=data[index][:,measure2index["button_status"]]
+                #subject*=zoom_factor#rotate(subject,rot)
+                subject[:,0]=-subject[:,0]
+                #subject[:,measure2index["button_status"]]=data[index][:,measure2index["button_status"]]
             elif j==2:
                 #apply flip on y axis
                 #apply crop at the end
@@ -108,7 +110,9 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                     measure2index['speed'],
                     measure2index['acceleration']
                 ])
-                subject[keep_measures]*=zoom_factor#rotate(subject,rot)
+                subject[:,1]=-subject[:,1]
+                #subject[-crop:]=0
+                #subject[keep_measures]*=zoom_factor#rotate(subject,rot)
             elif j==3:
                 #apply flip both on x and y axis
                 #apply crop both at the end and at the beginning
@@ -120,8 +124,9 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                     measure2index['y-coordinate'],
                     measure2index['x-coordinate']
                 ])
-                subject[keep_measures]*=zoom_factor#translation#rotate(subject,rot)
-                #subject=flip(subject,axis_i=1)
+                subject[:,0]=-subject[:,0]
+                subject[:,1]=-subject[:,1]
+                #subject[keep_measures]*=zoom_factor#translation#rotate(subject,rot)
             else:
                 raise ValueError("expected j in range(4), got {}".format(j))
             if max_len is not None:
