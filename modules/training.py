@@ -16,7 +16,7 @@ def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validat
 
     # Set device options
     target=target.to(device)
-    if not hierarchical:#if hierarchical the device option is in the forward function
+    if not hierarchical:#if hierarchical the device option is done in epoch
         input=input.to(device)
 
     #forward pass
@@ -63,7 +63,7 @@ in_air =None, in_air_optimizer=None,decoder=None,decoder_optimizer=None,
 clip=None, validation=False,window_size=None,task_i=None,augmentation=None,
 paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
     if batch_size!=1:
-        raise NotImplementedError("batch_size sohul be 1, got {}".format(batch_size))
+        raise NotImplementedError("batch_size should be 1, got {}".format(batch_size))
     losses=[]
     predictions=[]
     condition_targets=[]
@@ -86,7 +86,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             window_warp=np.random.randint(0,len(subject)-crop)
 
             if j ==0:#keep original
-                warped=subject[window_warp:window_warp+crop]
+                #warped=subject[window_warp:window_warp+crop]
                 pass
             elif j==1:
                 #apply translation/zoom to all measures but button_status
@@ -95,7 +95,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 #UPSAMPLE worth both for rescaling and window warping
                 rot=np.deg2rad(15)
                 #subject*=zoom_factor#rotate(subject,rot)
-                warped=upsample(subject[window_warp:window_warp+crop])
+                subject=upsample(subject)
                 #subject[:,0]=-subject[:,0]
                 #subject[:,measure2index["button_status"]]=data[index][:,measure2index["button_status"]]
             elif j==2:
@@ -112,7 +112,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                     measure2index['speed'],
                     measure2index['acceleration']
                 ])
-                warped=downsample(subject[window_warp:window_warp+crop],2)
+                subject=downsample(subject,2)
                 #subject[-crop:]=0
                 #subject[keep_measures]*=zoom_factor#rotate(subject,rot)
             elif j==3:
@@ -120,7 +120,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 #apply crop both at the end and at the beginning
                 #apply translation/zoom to spatial coordinate only
                 #DOWNSAMPLE *4 worth both for rescaling and window warping
-                warped=downsample(subject[window_warp:window_warp+crop],4)
+                subject=downsample(subject,4)
                 rot=np.deg2rad(30)
                 #subject[:,0]+=translation#*=zoom_factor
                 keep_measures=np.array([
@@ -130,7 +130,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 #subject[keep_measures]*=zoom_factor#translation#rotate(subject,rot)
             else:
                 raise ValueError("expected j in range(4), got {}".format(j))
-            subject=np.concatenate((subject[:window_warp],warped,subject[window_warp+crop:]))
+            #subject=np.concatenate((subject[:window_warp],warped,subject[window_warp+crop:]))
             if max_len is not None:
                 subject=np.concatenate((subject,np.zeros(shape=(max_len-len(subject),subject.shape[1]))))
             #numpy to tensor
@@ -145,7 +145,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
             predictions.append(prediction)
             losses.append(loss)
-    elif task_i is not None and window_size is None and not paper_air_split:#single task learning on the whole sequence
+    elif (task_i is not None and window_size is None and not paper_air_split) or hierarchical:#single task learning on the whole sequence
         for index in random_index:
             condition_targets.append(targets[index])
             if max_len is not None:
@@ -166,7 +166,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             predictions.append(prediction)
             losses.append(loss)
     #multitask learning (early fusion) OR single task learning on subsequences (either fixed window size or strokes)
-    elif task_i is None or window_size is not None or paper_air_split:
+    elif task_i is None or window_size is not None or (paper_air_split and not hierarchical):
         #if multitask learning len(data[i]) == 8 because 8 tasks
         super_index=[(i,j) for i in random_index for j in range(len(data[i]))]
         np.random.seed(1)
@@ -187,14 +187,15 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 subject=torch.Tensor(data[i][j]).unsqueeze(1)
 
             target=torch.Tensor([targets[i]]).unsqueeze(0)
-            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device,hierarchical=hierarchical)
+            #/!\ uncomment this to use the same model regardless of on paper or in air strokes
+            #loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device,hierarchical=hierarchical)
 
-            """#/!\ uncomment this to use different models when paper_air_split
+
             if paper_air_split and not on_paper:
-                loss, prediction =step(subject,target, in_air,in_air_optimizer, loss_fn, batch_size,clip,validation, decoder, decoder_optimizer,device=device,hierarchical=hierarchical)
+                loss, prediction =step(subject,target, in_air,in_air_optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
             else:
-                loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,decoder, decoder_optimizer,device=device,hierarchical=hierarchical)
-            """
+                loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device,hierarchical=hierarchical)
+
             if window_size is not None or paper_air_split: #subsequences => we need to save predictions for late fusion (e.g. voting)
                 predictions[i].append(prediction)
             else:#no late fusion => we just care about the label
@@ -203,7 +204,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
     else:
         raise NotImplementedError("check readme or code.")
 
-    if window_size is not None or paper_air_split: #subsequences => we need fuse the predictions of each sub seq (e.g. voting)
+    if window_size is not None or (paper_air_split and not hierarchical): #subsequences => we need fuse the predictions of each sub seq (e.g. voting)
         #average over each model's prediction : choose between this and majority voting
         predictions=[np.mean(sub) for sub in list(predictions.values())]
 
