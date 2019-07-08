@@ -18,6 +18,21 @@ index2plot= list(plot2index.keys())
 on_paper_value=1.0#on_paper_stroke iff button_status==1.0
 one_hot=np.identity(8)
 
+def downsample(task,factor=2):
+    downsampled=[point for i,point in enumerate(task) if i%factor!=0]
+    downsampled=np.array(downsampled)
+    return downsampled
+
+def upsample(task):
+    upsampled=[]
+    for i,point in enumerate(task[:-1]):
+        upsampled.append(point)
+        upsampled.append(np.mean(task[i:i+2],axis=0))
+    upsampled=np.array(upsampled)
+    #/!\ np.aronud button_status after resampling !!
+    upsampled[:,measure2index["button_status"]]=np.around(upsampled[:,measure2index["button_status"]])
+    return upsampled
+
 def get_significance(p):
     """used to print significance of a statistic test given p-value)"""
     if p<0.01:

@@ -82,25 +82,27 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             subject=data[index].copy()
             #translation=np.random.uniform(0.5,1.5)
             #zoom_factor=np.random.uniform(0.8,1.2)
-            #crop=np.random.randint(len(subject)//10,len(subject)//5)#also worth for size of window warping
-            #window_warp=np.random.randint(0,len(subject)-crop)
-            #/!\ np.aronud button_status after resampling !!
+            crop=np.random.randint(len(subject)//10,len(subject)//5)#also worth for size of window warping
+            window_warp=np.random.randint(0,len(subject)-crop)
+
             if j ==0:#keep original
+                warped=subject[window_warp:window_warp+crop]
                 pass
             elif j==1:
                 #apply translation/zoom to all measures but button_status
                 #apply crop at the beginning
                 #apply flip on x axis
-                speed=0.9#worth both for rescaling and window warping
+                #UPSAMPLE worth both for rescaling and window warping
                 rot=np.deg2rad(15)
                 #subject*=zoom_factor#rotate(subject,rot)
-                subject[:,0]=-subject[:,0]
+                warped=upsample(subject[window_warp:window_warp+crop])
+                #subject[:,0]=-subject[:,0]
                 #subject[:,measure2index["button_status"]]=data[index][:,measure2index["button_status"]]
             elif j==2:
                 #apply flip on y axis
                 #apply crop at the end
                 #apply translation/zoom to all measures but spatial coordinate and button_status
-                speed=1.1
+                #DOWNSAMPLE *2 worth both for rescaling and window warping
                 rot=np.deg2rad(-15)
                 keep_measures=np.array([
                     measure2index['timestamp'],
@@ -110,25 +112,25 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                     measure2index['speed'],
                     measure2index['acceleration']
                 ])
-                subject[:,1]=-subject[:,1]
+                warped=downsample(subject[window_warp:window_warp+crop],2)
                 #subject[-crop:]=0
                 #subject[keep_measures]*=zoom_factor#rotate(subject,rot)
             elif j==3:
                 #apply flip both on x and y axis
                 #apply crop both at the end and at the beginning
                 #apply translation/zoom to spatial coordinate only
-                speed=1.2
+                #DOWNSAMPLE *4 worth both for rescaling and window warping
+                warped=downsample(subject[window_warp:window_warp+crop],4)
                 rot=np.deg2rad(30)
                 #subject[:,0]+=translation#*=zoom_factor
                 keep_measures=np.array([
                     measure2index['y-coordinate'],
                     measure2index['x-coordinate']
                 ])
-                subject[:,0]=-subject[:,0]
-                subject[:,1]=-subject[:,1]
                 #subject[keep_measures]*=zoom_factor#translation#rotate(subject,rot)
             else:
                 raise ValueError("expected j in range(4), got {}".format(j))
+            subject=np.concatenate((subject[:window_warp],warped,subject[window_warp+crop:]))
             if max_len is not None:
                 subject=np.concatenate((subject,np.zeros(shape=(max_len-len(subject),subject.shape[1]))))
             #numpy to tensor
