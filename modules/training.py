@@ -82,8 +82,8 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             subject=data[index].copy()
             #translation=np.random.uniform(0.5,1.5)
             #zoom_factor=np.random.uniform(0.8,1.2)
-            crop=np.random.randint(len(subject)//10,len(subject)//5)#also worth for size of window warping
-            window_warp=np.random.randint(0,len(subject)-crop)
+            #crop=np.random.randint(len(subject)//10,len(subject)//5)#also worth for size of window warping
+            #window_warp=np.random.randint(0,len(subject)-crop)
 
             if j ==0:#keep original
                 #warped=subject[window_warp:window_warp+crop]
@@ -94,8 +94,9 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 #apply flip on x axis
                 #UPSAMPLE worth both for rescaling and window warping
                 rot=np.deg2rad(15)
-                #subject*=zoom_factor#rotate(subject,rot)
-                subject=upsample(subject)
+                #subject*=zoom_factor
+                subject=rotate(subject,rot)
+                #subject=upsample(subject)
                 #subject[:,0]=-subject[:,0]
                 #subject[:,measure2index["button_status"]]=data[index][:,measure2index["button_status"]]
             elif j==2:
@@ -112,7 +113,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                     measure2index['speed'],
                     measure2index['acceleration']
                 ])
-                subject=downsample(subject,2)
+                subject=rotate(subject,rot)#subject=downsample(subject,2)
                 #subject[-crop:]=0
                 #subject[keep_measures]*=zoom_factor#rotate(subject,rot)
             elif j==3:
@@ -120,8 +121,9 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 #apply crop both at the end and at the beginning
                 #apply translation/zoom to spatial coordinate only
                 #DOWNSAMPLE *4 worth both for rescaling and window warping
-                subject=downsample(subject,4)
+                #subject=downsample(subject,4)
                 rot=np.deg2rad(30)
+                subject=rotate(subject,rot)
                 #subject[:,0]+=translation#*=zoom_factor
                 keep_measures=np.array([
                     measure2index['y-coordinate'],
@@ -136,10 +138,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             #numpy to tensor
             target=torch.Tensor([targets[index]]).unsqueeze(0)
             if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model':
-                if hierarchical:
-                    subject=[torch.Tensor(seq.copy()).unsqueeze(0).transpose(1,2).to(device) for seq in subject]
-                else:
-                    subject=torch.Tensor(subject).unsqueeze(0).transpose(1,2)
+                subject=torch.Tensor(subject).unsqueeze(0).transpose(1,2)
             else:
                 subject=torch.Tensor(subject).unsqueeze(1)#add batch dimension
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
