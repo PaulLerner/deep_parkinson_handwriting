@@ -19,7 +19,7 @@ on_paper_value=1.0#on_paper_stroke iff button_status==1.0
 one_hot=np.identity(8)
 
 def downsample(task,factor=2):
-    downsampled=[point for i,point in enumerate(task) if i%factor!=0]
+    downsampled=[point for i,point in enumerate(task) if i%factor==0]
     downsampled=np.array(downsampled)
     return downsampled
 

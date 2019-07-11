@@ -177,7 +177,12 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             if window_size is None and not paper_air_split:#we don't use the dictionary system so we have to keep track of the labels
                 condition_targets.append(targets[i])
             #is it a on_paper or in-air stroke ?
-            on_paper= data[i][j][0][measure2index["button_status"]]==on_paper_value
+            if model.__class__.__name__!='Sequential':
+                on_paper= data[i][j][0][measure2index["button_status"]]==on_paper_value
+            else:
+                on_paper=True
+            if max_len is not None:
+                subject=np.concatenate((data[i][j],np.zeros(shape=(max_len-len(data[i][j]),data[index].shape[1]))))
             #numpy to tensor
             #and add batch dimension
             if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model':
