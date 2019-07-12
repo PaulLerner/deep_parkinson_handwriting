@@ -61,25 +61,23 @@ def CorrectHyperparameters(input_size,seq_len,hidden_size,conv_kernel,pool_kerne
     """makes convolved size divisible by pooling kernel and computes size of sequence after convolutions"""
     out_size=seq_len
     print("seq_len :",out_size)
-    out_size=get_out_size(out_size,padding,dilation[0],conv_kernel[0],stride=1)
-    print("after conv1 :",out_size)
-    pool_kernel[0]=CorrectPool(out_size,pool_kernel[0])
-    out_size=get_out_size(out_size,padding,dilation=1,kernel_size=pool_kernel[0],stride=pool_kernel[0])
-    print("after pool1 :",out_size)
-    out_size*=n_seq
-    print("after concat (if applicable) :",out_size)
-    if len(conv_kernel) > 1 and len(pool_kernel) > 1 :
-        cat_out_size=out_size
-        out_size=get_out_size(cat_out_size,padding,dilation[1],conv_kernel[1],stride=1)
-        while out_size <1:
-            conv_kernel[1]-=1
-            out_size=get_out_size(cat_out_size,padding,dilation[1],conv_kernel[1],stride=1)
-        print("after conv2 :",out_size)
-        pool_kernel[1]=CorrectPool(out_size,pool_kernel[1])
-        out_size=get_out_size(out_size,padding,dilation=1,kernel_size=pool_kernel[1],stride=pool_kernel[1])
-        print("after pool2 :",out_size)
+    for i, (h,c,p,pad,d) in enumerate(list(zip(hidden_size,conv_kernel,pool_kernel,padding,dilation))):
+        print("layer",i+1)
+        in_size=out_size
+        out_size=get_out_size(out_size,pad,d,c,stride=1)
+        print("\tafter conv{} :{}".format(i+1,out_size))
+        if out_size<1:
+            c=(in_size-1)//d+1
+            out_size=get_out_size(in_size,pad,d,c,stride=1)
+            print("\t\tupdate c. after conv{} :{}".format(i+1,out_size))
+            conv_kernel[i]=c
+        pool_kernel[i]=CorrectPool(out_size,p)
+        out_size=get_out_size(out_size,pad,dilation=1,kernel_size=pool_kernel[i],stride=pool_kernel[i])
+        print("\tafter pool{} :{}".format(i+1,out_size))
+    out_size*=hidden_size[-1]
+    print("after flatting")
     return input_size,out_size,hidden_size,conv_kernel,pool_kernel  ,padding,stride,dilation, dropout,output_size
-
+    
 def wrong_len_gen(data,good_len):
     """used for splitting tasks into tokens"""
     for i,s in enumerate(data):

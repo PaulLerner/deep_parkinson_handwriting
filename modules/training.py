@@ -182,13 +182,13 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             else:
                 on_paper=True
             if max_len is not None:
-                subject=np.concatenate((data[i][j],np.zeros(shape=(max_len-len(data[i][j]),data[index].shape[1]))))
+                subject=np.concatenate((data[i][j],np.zeros(shape=(max_len-len(data[i][j]),data[i][j].shape[1]))))
             #numpy to tensor
             #and add batch dimension
             if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model':
-                subject=torch.Tensor(data[i][j]).unsqueeze(0).transpose(1,2)
+                subject=torch.Tensor(subject).unsqueeze(0).transpose(1,2)
             else:
-                subject=torch.Tensor(data[i][j]).unsqueeze(1)
+                subject=torch.Tensor(subject).unsqueeze(1)
 
             target=torch.Tensor([targets[i]]).unsqueeze(0)
             #/!\ uncomment this to use the same model regardless of on paper or in air strokes
