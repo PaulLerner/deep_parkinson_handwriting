@@ -195,7 +195,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             #loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device,hierarchical=hierarchical)
 
 
-            if paper_air_split and not on_paper:
+            if paper_air_split and not on_paper and in_air is not None:
                 loss, prediction =step(subject,target, in_air,in_air_optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
             else:
                 loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device,hierarchical=hierarchical)

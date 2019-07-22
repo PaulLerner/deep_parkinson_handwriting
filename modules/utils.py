@@ -75,9 +75,9 @@ def CorrectHyperparameters(input_size,seq_len,hidden_size,conv_kernel,pool_kerne
         out_size=get_out_size(out_size,pad,dilation=1,kernel_size=pool_kernel[i],stride=pool_kernel[i])
         print("\tafter pool{} :{}".format(i+1,out_size))
     out_size*=hidden_size[-1]
-    print("after flatting")
+    print("after flatting",out_size)
     return input_size,out_size,hidden_size,conv_kernel,pool_kernel  ,padding,stride,dilation, dropout,output_size
-    
+
 def wrong_len_gen(data,good_len):
     """used for splitting tasks into tokens"""
     for i,s in enumerate(data):
