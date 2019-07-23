@@ -1,24 +1,24 @@
 import torch
 
 class CNN1d(torch.nn.Module):
-    def __init__(self,input_size,conv_seq_len,hidden_size,conv_kernel,pool_kernel ,padding=0,
+    def __init__(self,input_size,conv_seq_len,hidden_size,conv_kernel,pool_kernel ,padding=[0,0],
                  stride=1,dilation=1, dropout=0.0,output_size=1):
         super(CNN1d, self).__init__()
 
         self.num_layers=len(hidden_size)
         self.conv1=torch.nn.utils.weight_norm(
-            torch.nn.Conv1d(input_size,hidden_size[0],conv_kernel[0],stride=1,padding=padding,dilation=dilation[0]))
+            torch.nn.Conv1d(input_size,hidden_size[0],conv_kernel[0],stride=1,padding=padding[0],dilation=dilation[0]))
         self.relu1=torch.nn.ReLU()
-        self.pool1=torch.nn.MaxPool1d(pool_kernel[0],pool_kernel[0],padding,dilation=1)
+        self.pool1=torch.nn.MaxPool1d(pool_kernel[0],pool_kernel[0],padding[0],dilation=1)
         if self.num_layers > 1:
             self.drop1=torch.nn.Dropout(dropout)
             self.conv2=torch.nn.utils.weight_norm(
-                torch.nn.Conv1d(hidden_size[0],hidden_size[1],conv_kernel[1],stride=1,padding=0,dilation=dilation[1]))
+                torch.nn.Conv1d(hidden_size[0],hidden_size[1],conv_kernel[1],stride=1,padding=padding[0],dilation=dilation[1]))
             self.relu2=torch.nn.ReLU()
-            self.pool2=torch.nn.MaxPool1d(pool_kernel[1],pool_kernel[1],padding,dilation=1)
+            self.pool2=torch.nn.MaxPool1d(pool_kernel[1],pool_kernel[1],padding[1],dilation=1)
 
         self.drop2=torch.nn.Dropout(dropout)
-        self.linear1=torch.nn.Linear(conv_seq_len*hidden_size[-1],output_size)
+        self.linear1=torch.nn.Linear(conv_seq_len,output_size)
         """self.relu2=torch.nn.ReLU()
         self.drop3=torch.nn.Dropout(dropout)
         self.linear2=torch.nn.Linear(10,output_size)    """

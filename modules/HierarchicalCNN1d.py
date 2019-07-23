@@ -11,11 +11,11 @@ class HierarchicalCNN1d(torch.nn.Module):
         self.pool1=torch.nn.MaxPool1d(pool_kernel[0],pool_kernel[0],padding,dilation=1)
         self.drop1=torch.nn.Dropout(dropout)
         self.conv2=torch.nn.utils.weight_norm(
-            torch.nn.Conv1d(hidden_size[0],hidden_size[1],conv_kernel[1],stride=1,padding=0,dilation=dilation[1]))
+            torch.nn.Conv1d(hidden_size[0],hidden_size[1],conv_kernel[1],stride=1,padding=padding,dilation=dilation[1]))
         self.relu2=torch.nn.ReLU()
         self.pool2=torch.nn.MaxPool1d(pool_kernel[1],pool_kernel[1],padding,dilation=1)
         self.drop2=torch.nn.Dropout(dropout)
-        self.linear1=torch.nn.Linear(conv_seq_len*hidden_size[-1],output_size)
+        self.linear1=torch.nn.Linear(conv_seq_len,output_size)
         self.sigmoid=torch.nn.Sigmoid()
     def forward(self,subject):
         save_feats=[]
