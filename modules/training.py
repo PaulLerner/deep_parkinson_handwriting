@@ -95,8 +95,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 #UPSAMPLE worth both for rescaling and window warping
                 rot=np.deg2rad(15)
                 #subject*=zoom_factor
-                subject=rotate(subject,rot)
-                #subject=upsample(subject)
+                subject=upsample(subject)
                 #subject[:,0]=-subject[:,0]
                 #subject[:,measure2index["button_status"]]=data[index][:,measure2index["button_status"]]
             elif j==2:
@@ -113,7 +112,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                     measure2index['speed'],
                     measure2index['acceleration']
                 ])
-                subject=rotate(subject,rot)#subject=downsample(subject,2)
+                subject=downsample(subject,2)
                 #subject[-crop:]=0
                 #subject[keep_measures]*=zoom_factor#rotate(subject,rot)
             elif j==3:
@@ -123,7 +122,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 #DOWNSAMPLE *4 worth both for rescaling and window warping
                 #subject=downsample(subject,4)
                 rot=np.deg2rad(30)
-                subject=rotate(subject,rot)
+                subject=downsample(subject,4)
                 #subject[:,0]+=translation#*=zoom_factor
                 keep_measures=np.array([
                     measure2index['y-coordinate'],
@@ -149,6 +148,8 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             condition_targets.append(targets[index])
             if max_len is not None:
                 subject=np.concatenate((data[index],np.zeros(shape=(max_len-len(data[index]),data[index].shape[1]))))
+            else:
+                subject=data[index]
             #numpy to tensor
             if hierarchical:
                 if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model' and model.__class__.__name__!= 'HierarchicalRNN':
@@ -183,6 +184,8 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 on_paper=True
             if max_len is not None:
                 subject=np.concatenate((data[i][j],np.zeros(shape=(max_len-len(data[i][j]),data[i][j].shape[1]))))
+            else:
+                subject=data[i][j]
             #numpy to tensor
             #and add batch dimension
             if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model':
