@@ -93,10 +93,10 @@ def count_params(model):
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return total_params, trainable_params
-def plot_task(task):
-    plt.plot(task[:,1],task[:,0])
-    plt.xlabel(index2measure[1])
-    plt.ylabel(index2measure[0])
+def plot_task(task,measure2index=measure2index):
+    plt.plot(task[:,measure2index["x-coordinate"]],task[:,measure2index["y-coordinate"]])
+    plt.xlabel("x-coordinate")
+    plt.ylabel("y-coordinate")
 def plot_measures(task):
     plt.figure(figsize=(16,12))
     for i,measure in enumerate(index2measure[:-2]):
