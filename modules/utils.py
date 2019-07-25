@@ -96,14 +96,15 @@ def plot_task(task,measure2index=measure2index):
     plt.plot(task[:,measure2index["x-coordinate"]],task[:,measure2index["y-coordinate"]])
     plt.xlabel("x-coordinate")
     plt.ylabel("y-coordinate")
-def plot_measures(task,subplot=True,figsize=(16,12)):
+def plot_measures(task,subplot=False,figsize=(6,4)):
     plt.figure(figsize=figsize)
     for i,measure in enumerate(index2measure):
         if subplot:
             plt.subplot(3,3,i+1)
-        plt.plot(task[:,i])
+        plt.plot(task[:,i],label=measure)
         plt.xlabel("timesteps")
         plt.ylabel(measure)
+    plt.legend()
 def return_metrics(tp,tn,fp,fn):
     accuracy= (tp+tn)/(tp+tn+fp+fn)
     sensitivity = tp/(tp+fn) if (tp+fn) != 0 else 0.0 #without condition positives the sensitivity should be 0
