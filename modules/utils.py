@@ -2,8 +2,7 @@ import numpy as np
 from time import time
 import matplotlib.pyplot as plt
 
-measure2index={"y-coordinate":0,"x-coordinate":1,"timestamp":2, "button_status":3,"tilt":4, "elevation":5,"pressure":6,
-"speed":7,"acceleration":8}
+measure2index={"y-coordinate":0,"x-coordinate":1,"timestamp":2, "button_status":3,"tilt":4, "elevation":5,"pressure":6}
 index2measure=list(measure2index.keys())
 
 task2index={"spiral":0,"l":1,"le":2 ,"les":3,"lektorka" :4,"porovnat":5,"nepopadnout":6, "tram":7}
