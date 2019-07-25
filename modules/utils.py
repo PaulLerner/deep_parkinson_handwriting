@@ -97,10 +97,11 @@ def plot_task(task,measure2index=measure2index):
     plt.plot(task[:,measure2index["x-coordinate"]],task[:,measure2index["y-coordinate"]])
     plt.xlabel("x-coordinate")
     plt.ylabel("y-coordinate")
-def plot_measures(task):
-    plt.figure(figsize=(16,12))
-    for i,measure in enumerate(index2measure[:-2]):
-        plt.subplot(3,3,i+1)
+def plot_measures(task,subplot=True,figsize=(16,12)):
+    plt.figure(figsize=figsize)
+    for i,measure in enumerate(index2measure):
+        if subplot:
+            plt.subplot(3,3,i+1)
         plt.plot(task[:,i])
         plt.xlabel("timesteps")
         plt.ylabel(measure)
