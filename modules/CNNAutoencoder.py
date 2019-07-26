@@ -1,5 +1,5 @@
 import torch
-from modules.Flatten import Flatten
+from .Flatten import Flatten
 
 class CNNAutoencoder(torch.nn.Module):
     def __init__(self,input_size,hidden_size,conv_kernel,pool_kernel ,padding,

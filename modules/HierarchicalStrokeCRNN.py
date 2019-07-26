@@ -1,5 +1,5 @@
 import torch
-from modules.utils import on_paper_value, measure2index
+from .utils import on_paper_value, measure2index
 
 class HierarchicalStrokeCRNN(torch.nn.Module):
     """similar to HierarchicalCNN1d except that there's two separate convolutional layers

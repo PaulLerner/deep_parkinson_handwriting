@@ -2,8 +2,8 @@
 import torch
 import numpy as np
 from scipy.signal import resample
-from modules.utils import *
-from modules.load_data import flip,rotate
+from .utils import *
+from .load_data import flip,rotate
 ## step
 
 def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validation = False, decoder=None,
@@ -82,11 +82,11 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             subject=data[index].copy()
             #translation=np.random.uniform(0.5,1.5)
             #zoom_factor=np.random.uniform(0.8,1.2)
-            #crop=np.random.randint(len(subject)//10,len(subject)//5)#also worth for size of window warping
-            #window_warp=np.random.randint(0,len(subject)-crop)
+            crop=np.random.randint(len(subject)//10,len(subject)//5)#also worth for size of window warping
+            window_warp=np.random.randint(0,len(subject)-crop)
 
             if j ==0:#keep original
-                #warped=subject[window_warp:window_warp+crop]
+                warped=subject[window_warp:window_warp+crop]
                 pass
             elif j==1:
                 #apply translation/zoom to all measures but button_status
@@ -95,7 +95,9 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 #UPSAMPLE worth both for rescaling and window warping
                 rot=np.deg2rad(15)
                 #subject*=zoom_factor
-                subject=upsample(subject)
+                #subject=upsample(subject)
+
+                warped=upsample(subject[window_warp:window_warp+crop])
                 #subject[:,0]=-subject[:,0]
                 #subject[:,measure2index["button_status"]]=data[index][:,measure2index["button_status"]]
             elif j==2:
@@ -108,11 +110,9 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                     measure2index['timestamp'],
                     measure2index['tilt'],
                     measure2index['elevation'],
-                    measure2index['pressure'],
-                    measure2index['speed'],
-                    measure2index['acceleration']
+                    measure2index['pressure']
                 ])
-                subject=downsample(subject,2)
+                warped=downsample(subject[window_warp:window_warp+crop],2)
                 #subject[-crop:]=0
                 #subject[keep_measures]*=zoom_factor#rotate(subject,rot)
             elif j==3:
@@ -122,7 +122,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 #DOWNSAMPLE *4 worth both for rescaling and window warping
                 #subject=downsample(subject,4)
                 rot=np.deg2rad(30)
-                subject=downsample(subject,4)
+                warped=downsample(subject[window_warp:window_warp+crop],4)
                 #subject[:,0]+=translation#*=zoom_factor
                 keep_measures=np.array([
                     measure2index['y-coordinate'],
@@ -131,7 +131,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 #subject[keep_measures]*=zoom_factor#translation#rotate(subject,rot)
             else:
                 raise ValueError("expected j in range(4), got {}".format(j))
-            #subject=np.concatenate((subject[:window_warp],warped,subject[window_warp+crop:]))
+            subject=np.concatenate((subject[:window_warp],warped,subject[window_warp+crop:]))
             if max_len is not None:
                 subject=np.concatenate((subject,np.zeros(shape=(max_len-len(subject),subject.shape[1]))))
             #numpy to tensor

@@ -1,5 +1,5 @@
 import torch
-from modules.Flatten import Flatten
+from .Flatten import Flatten
 
 class CNN1d(torch.nn.Module):
     def __init__(self,input_size,conv_seq_len,hidden_size,conv_kernel,pool_kernel ,padding,
