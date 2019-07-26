@@ -2,8 +2,7 @@ import numpy as np
 from time import time
 import matplotlib.pyplot as plt
 
-measure2index={"y-coordinate":0,"x-coordinate":1,"timestamp":2, "button_status":3,"tilt":4, "elevation":5,"pressure":6,
-"speed":7,"acceleration":8}
+measure2index={"y-coordinate":0,"x-coordinate":1,"timestamp":2, "button_status":3,"tilt":4, "elevation":5,"pressure":6}
 index2measure=list(measure2index.keys())
 
 task2index={"spiral":0,"l":1,"le":2 ,"les":3,"lektorka" :4,"porovnat":5,"nepopadnout":6, "tram":7}
@@ -97,13 +96,15 @@ def plot_task(task,measure2index=measure2index):
     plt.plot(task[:,measure2index["x-coordinate"]],task[:,measure2index["y-coordinate"]])
     plt.xlabel("x-coordinate")
     plt.ylabel("y-coordinate")
-def plot_measures(task):
-    plt.figure(figsize=(16,12))
-    for i,measure in enumerate(index2measure[:-2]):
-        plt.subplot(3,3,i+1)
-        plt.plot(task[:,i])
+def plot_measures(task,subplot=False,figsize=(6,4)):
+    plt.figure(figsize=figsize)
+    for i,measure in enumerate(index2measure):
+        if subplot:
+            plt.subplot(3,3,i+1)
+        plt.plot(task[:,i],label=measure)
         plt.xlabel("timesteps")
         plt.ylabel(measure)
+    plt.legend()
 def return_metrics(tp,tn,fp,fn):
     accuracy= (tp+tn)/(tp+tn+fp+fn)
     sensitivity = tp/(tp+fn) if (tp+fn) != 0 else 0.0 #without condition positives the sensitivity should be 0
