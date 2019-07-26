@@ -177,11 +177,11 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
         for i,j in super_index:#subject index, task index OR subsequence index
             if window_size is None and not paper_air_split:#we don't use the dictionary system so we have to keep track of the labels
                 condition_targets.append(targets[i])
-            #is it a on_paper or in-air stroke ?
-            if model.__class__.__name__!='Sequential':
+
+            if in_air is not None:#is it a on_paper or in-air stroke ?
                 on_paper= data[i][j][0][measure2index["button_status"]]==on_paper_value
             else:
-                on_paper=True
+                on_paper=False #we don't care, it just has to be a bool
             if max_len is not None:
                 subject=np.concatenate((data[i][j],np.zeros(shape=(max_len-len(data[i][j]),data[i][j].shape[1]))))
             else:
