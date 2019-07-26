@@ -96,7 +96,7 @@ def plot_task(task,measure2index=measure2index):
     plt.plot(task[:,measure2index["x-coordinate"]],task[:,measure2index["y-coordinate"]])
     plt.xlabel("x-coordinate")
     plt.ylabel("y-coordinate")
-def plot_measures(task,subplot=False,figsize=(6,4)):
+def plot_measures(task,subplot=False,figsize=(6,4),index2measure=index2measure):
     plt.figure(figsize=figsize)
     for i,measure in enumerate(index2measure):
         if subplot:
