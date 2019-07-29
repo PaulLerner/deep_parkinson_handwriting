@@ -14,7 +14,7 @@ class CNN1d(torch.nn.Module):
                 torch.nn.utils.weight_norm(
                     torch.nn.Conv1d(s,h,c,stride=1,padding=pad,dilation=d)),
                 torch.nn.ReLU(),
-                torch.nn.MaxPool1d(p,p,padding=pad,dilation=1),
+                torch.nn.MaxPool1d(p,p,padding=0,dilation=1),
                 torch.nn.Dropout(dropout)
             ]
         layers+=[Flatten(),

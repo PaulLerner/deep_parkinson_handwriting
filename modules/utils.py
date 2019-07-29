@@ -71,7 +71,7 @@ def CorrectHyperparameters(input_size,seq_len,hidden_size,conv_kernel,pool_kerne
             print("\t\tupdate c. after conv{} :{}".format(i+1,out_size))
             conv_kernel[i]=c
         pool_kernel[i]=CorrectPool(out_size,p)
-        out_size=get_out_size(out_size,pad,dilation=1,kernel_size=pool_kernel[i],stride=pool_kernel[i])
+        out_size=get_out_size(out_size,padding=0,dilation=1,kernel_size=pool_kernel[i],stride=pool_kernel[i])
         print("\tafter pool{} :{}".format(i+1,out_size))
     out_size*=hidden_size[-1]
     print("after flatting",out_size)

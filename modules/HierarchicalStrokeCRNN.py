@@ -17,7 +17,7 @@ class HierarchicalStrokeCRNN(torch.nn.Module):
         self.conv1_air=torch.nn.utils.weight_norm(
             torch.nn.Conv1d(input_size,hidden_size[0],conv_kernel[0],stride=1,padding=padding,dilation=dilation[0]))
         self.relu1=torch.nn.ReLU()
-        self.pool1=torch.nn.MaxPool1d(pool_kernel[0],pool_kernel[0],padding,dilation=1)
+        self.pool1=torch.nn.MaxPool1d(pool_kernel[0],pool_kernel[0],padding=0,dilation=1)
         self.drop1=torch.nn.Dropout(dropout)
 
         if self.is_lstm:
