@@ -19,15 +19,24 @@ If you want to change any other hyperparameters you will have to dive into the `
 # Dependencies
 - PyTorch
 - Sci-kit learn
-- NumPy
+- NumPy (should be included in PyTorch)
+- Seaborn (very optional, only used to set the style of matplotlib)
 
 # Utils
 `utils.py` contains misc. utilitaries such as measures and task dictionaries, confusion matrix.
+# Main
+## Data
+### Loading
+is done in `load_data.py`. The load_data function yields subjects data, label (1 for PD 0 for control) and age. Note that it discards the subjects who didn't perform the spiral, i.e. Subjects 46 (control), 60 (PD) and 66 (control), counting from zero. Moreover, it trims the data for the few subjects who begin their exam in-air and the one where there is a measure error at the end, see [Data Exploration](#Data-Exploration). The raw data is then turned into a list in `Main`. It will be saved using pickle in `join("data","raw_data")` (i.e. `data/raw_data` in UNIX and Linux).
 
-# Data
-## Loading
-is done in `load_data.py`. It loads the subjetcs data and labels (1 for PD 0 for control) in the lists `data` and  `targets`, respectively.  
- It discards the subjects who didn't perform the spiral, i.e. Subjects 46 (control), 60 (PD) and 66 (control), counting from zero.
+You can then select a task using `task_i` (cf. task2index). This is done in task_selection which is called in massage_data. Set `task_i` to None if you want to keep the whole eight tasks in the shape of (72 subjects, 8 task, x timesteps, 7 measures). Unfortunately, you have to select a task if you want to split it into strokes using `paper_air_split`. This is done in massage_data. After eventually splitting data into strokes, massage_data standardizes the data (giving it a mean of 0 and a std of 1) :
+- t0 is removed from each timestamps so the time stamp measure represents the length of the exams
+- Moreover, the timestamp is standardized globally, i.e. we compute the mean and std value of all subjects in a given task before centering and reducing the data
+- unlike the timestamp, the other measures are scaled subject-wise, independently of all subjects, using [sklearn's scale](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.scale.html)
+
+After this, massage_data zero-pads (and trims if `trim`) the data to `max_len` if `max_len is not None`. This can also be done in epoch before feeding the subject to the model, see [Training](#Training)
+
+
 
  The task sequence is in average **2286** &rarr; task duration is in average 11.4s  
 
