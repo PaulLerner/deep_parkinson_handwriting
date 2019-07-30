@@ -154,7 +154,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
             predictions.append(prediction)
             losses.append(loss)
-    elif (task_i is not None and window_size is None and not paper_air_split) or hierarchical:#single task learning on the whole sequence
+    elif not paper_air_split or hierarchical:#single task learning on the whole sequence OR hierarchical model
         for index in random_index:
             condition_targets.append(targets[index])
             if max_len is not None:
@@ -176,19 +176,15 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
             predictions.append(prediction)
             losses.append(loss)
-    #multitask learning (early fusion) OR single task learning on subsequences (either fixed window size or strokes)
-    elif task_i is None or window_size is not None or (paper_air_split and not hierarchical):
+    #single task learning on subsequences (e.g. strokes)
+    elif paper_air_split and not hierarchical:
         #if multitask learning len(data[i]) == 8 because 8 tasks
         super_index=[(i,j) for i in random_index for j in range(len(data[i]))]
         np.random.seed(1)
         np.random.shuffle(super_index)
-        if window_size is not None or paper_air_split: #subsequences => we need to save predictions for late fusion (e.g. voting)
-            predictions=dict(zip(random_index,[[] for _ in random_index]))
-            condition_targets=[targets[i] for i in random_index]
-        for i,j in super_index:#subject index, task index OR subsequence index
-            if window_size is None and not paper_air_split:#we don't use the dictionary system so we have to keep track of the labels
-                condition_targets.append(targets[i])
-
+        predictions=dict(zip(random_index,[[] for _ in random_index]))
+        condition_targets=[targets[i] for i in random_index]
+        for i,j in super_index:#subject index, subsequence index
             if in_air is not None:#is it a on_paper or in-air stroke ?
                 on_paper= data[i][j][0][measure2index["button_status"]]==on_paper_value
             else:
@@ -209,20 +205,17 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             #loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device,hierarchical=hierarchical)
 
 
-            if paper_air_split and not on_paper and in_air is not None:
+            if not on_paper and in_air is not None:
                 loss, prediction =step(subject,target, in_air,in_air_optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
             else:
                 loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device,hierarchical=hierarchical)
 
-            if window_size is not None or paper_air_split: #subsequences => we need to save predictions for late fusion (e.g. voting)
-                predictions[i].append(prediction)
-            else:#no late fusion => we just care about the label
-                predictions.append(prediction)
+            predictions[i].append(prediction)
             losses.append(loss)
     else:
         raise NotImplementedError("check readme or code.")
 
-    if window_size is not None or (paper_air_split and not hierarchical): #subsequences => we need fuse the predictions of each sub seq (e.g. voting)
+    if paper_air_split and not hierarchical: #subsequences => we need fuse the predictions of each sub seq (e.g. voting)
         #average over each model's prediction : choose between this and majority voting
         predictions=[np.mean(sub) for sub in list(predictions.values())]
 
