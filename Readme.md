@@ -2,6 +2,26 @@ Work by Paul Lerner under Laurence Likforman-Sulem supervision.
 
 All the modules, models, extra-code are stored in `modules/`
 
+# Contents
+- [Dependencies](#dependencies)
+- [Utils](#utils)
+- [Main](#main)
+  * [utils](#utils)
+  * [Data](#data)
+    + [Loading](#loading)
+    + [Massaging](#massaging)
+    + [Some insights about the number of timesteps in the different tasks](#some-insights-about-the-number-of-timesteps-in-the-different-tasks)
+  * [Training](#training)
+    + [Cross-Validation (CV)](#cross-validation--cv-)
+    + [Majority Voting](#majority-voting)
+    + [Epoch](#epoch)
+    + [Step](#step)
+    + [Hyperparameters](#hyperparameters)
+      - [Random Search](#random-search)
+  * [Visualization](#visualization)
+    + [Metrics](#metrics)
+    + [Interpretation](#interpretation)
+
 <!---# Main
 arguments should be the hyperparameters :
 - is_lstm
@@ -82,6 +102,12 @@ The model is trained using the [Adam](https://pytorch.org/docs/stable/optim.html
 
 At the end of the Cross-validation, if `run_CV`, the program will dump the `fold_train_metrics` and the `fold_test_metrics` using Pickle in `join("experiments",model_name)+<train or test>`, with `model_name` being the concatenation of `model_type` and other hyperparameters. In the same way, it will save the models' predictions in `join("predictions",model_name)+<train or test>`. It will also save the results (as defined in [utils](#utils)) to the gitignored-file : `results.csv`.
 
+### Majority Voting
+
+The majority voting function allows you to combine the predictions of the different model, either directly stored in `model_test_predictions` or loaded from the `predictions` folder.
+
+You can control whether to perform actual majority voting or to fuse the models' predictions' probability using `round_before_voting`. The rest of the function is very similar to CV.
+
 ### Epoch
 `batch_size` should be `1`, you're welcome to implement batch learning but it's not suited for a small dataset like PaHaW.
 
@@ -128,4 +154,14 @@ All the other hyperparameters are pretty straightforward so I'll let you refer t
 #### Random Search
 You can perform a random search of the hyperparameters by setting `random_search` to True. You can play with the different ranges of the hyperparameters using the `ranges` dictionary.
 
-### Majority Voting
+## Visualization
+
+### Metrics
+
+This allows you to visualize the results of your model using the plot function defined in `utils`.
+
+You can either visualize the results currently stored in `fold_test_metrics` or load them from the `experiments` folder.
+
+###  Interpretation
+
+This allows you to visualize the weights of the model, However this is an ad-hoc example for `cnn1d`
