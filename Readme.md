@@ -21,6 +21,8 @@ All the modules, models, extra-code are stored in `modules/`
   * [Visualization](#visualization)
     + [Metrics](#metrics)
     + [Interpretation](#interpretation)
+- [NewHandPD](#NewHandPD)
+- [Data Exploration](#Data-Exploration)
 
 <!---# Main
 arguments should be the hyperparameters :
@@ -165,3 +167,34 @@ You can either visualize the results currently stored in `fold_test_metrics` or 
 ###  Interpretation
 
 This allows you to visualize the weights of the model, However this is an ad-hoc example for `cnn1d`
+
+# NewHandPD
+todo : add doc.  
+In the mean-time : refer to report #6 or to `newhandpd_v_pahaw`.
+
+# Data exploration
+## Age and duration analysis
+this study is similar to the one in [NewHandPD](#NewHandPD).
+## Exploration
+
+Provides some insights about the content of the data
+
+## Recording errors
+These recording errors are now corrected in the load_data function as explained in [Loading](#Loading)
+
+All the subject’s numbers I mention are counting from
+zero and after excluding the subjects that didn’t perform the
+spiral exam.
+### Exam starting in air
+
+The exams spiral, l, lektorka and tram from subjects 56,
+9, 39 and 67, respectively, started their exam while pen was
+in air (i.e. not on paper). Although Drotar et al. say that the recording
+starts when the pen first touches the paper so I assume it’s a
+recording error and discarded the in-air points.
+### Exam finishing in air
+In the same way the subject # 43 has a recording problem
+on his tram exam : the timestamp measure jumps to 10<sup>12</sup> on
+the 12 last points of the recording although the timestamps
+from all subjects are in the 10<sup>6</sup> magnitude. So I assume it’s
+a recording error and discarded the 12 last points.
