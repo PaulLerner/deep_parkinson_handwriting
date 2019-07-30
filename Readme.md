@@ -56,7 +56,7 @@ All of the content of this section is also present in relevant places in `Main.i
 ## utils
 some extra utils in addition to `utils.py` due to the great number of parameters :
 - plot plots either the loss or the accuracy of the model depending on `plot_i` (see `plot2index`)
-- return_results formats the hyperparameters and the evaluation metrics to a nice string, separated by `;`
+- return_results formats the hyperparameters, the evaluation metrics and the index of the wrongly classified subjects to a nice string, separated by `;`
 - print_results prints the above string for the epoch which provided the best accuracy in average among all 10 folds.
 
 ## Data
