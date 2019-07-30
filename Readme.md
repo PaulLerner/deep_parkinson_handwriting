@@ -168,6 +168,10 @@ You can either visualize the results currently stored in `fold_test_metrics` or 
 
 This allows you to visualize the weights of the model, However this is an ad-hoc example for `cnn1d`
 
+## Results
+All of our experiment results, including 100s of random-search experiments are available in `reports/experiment results.ods` (careful of the space).
+
+The results' format is described in [utils](#utils).
 # NewHandPD
 todo : add doc.  
 In the mean-time : refer to report #6 or to `newhandpd_v_pahaw`.
