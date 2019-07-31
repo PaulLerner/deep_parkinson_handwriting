@@ -46,6 +46,7 @@ If you want to change any other hyperparameters you will have to dive into the `
 - Sci-kit learn
 - NumPy (should be included in PyTorch)
 - Seaborn (very optional, only used to set the style of matplotlib)
+- SciPy (only for [Data Exploration](#Data-Exploration) and [NewHandPD](#NewHandPD))
 
 # Utils
 `utils.py` contains misc. utilitaries such as measures and task dictionaries, confusion matrix.
@@ -60,6 +61,22 @@ some extra utils in addition to `utils.py` due to the great number of parameters
 - print_results prints the above string for the epoch which provided the best accuracy in average among all 10 folds.
 
 ## Data
+### Downloading
+
+To get access to the PaHaW database
+Please	 fill	 in	 a	 license	 agreement	 that	 can	 be	 downloaded	 in	 DOCX	 or	 PDF	 (see http://bdalab.utko.feec.vutbr.cz/)	 and	 send	 it	 to	 mekyska@feec.vutbr.cz	 with	 CC	 to	peter.drotar@tuke.sk	 and	 irena.rektorova@fnusa.cz.	 You	 will	 consequently	 get	 an	 access	 to	 the	database.
+
+The data should be placed like this :  
+```
+data
+└───PaHaW
+│   └───PaHaW_public
+│   │   │   000**
+│   │   corpus_PaHaW.xlsx
+│   │   corpus_PaHaW.csv
+```
+
+**`corpus_PaHaW.csv` doesn't exist in the database, you should create it by opening `corpus_PaHaW.xlsx` (with e.g. LibreOffice Calc or Microsoft Excel) then `File, Save as, corpus_PaHaW.csv` (the separator should be `;`).**
 ### Loading
 is done in `load_data.py`. The load_data function yields subjects data, label (1 for PD 0 for control) and age. Note that it discards the subjects who didn't perform the spiral, i.e. Subjects 46 (control), 60 (PD) and 66 (control), counting from zero. Moreover, it trims the data for the few subjects who begin their exam in-air and the one where there is a measure error at the end, see [Data Exploration](#Data-Exploration). The raw data is then turned into a list in `Main`. It will be saved using pickle in `join("data","raw_data")` (i.e. `data/raw_data` in UNIX and Linux). In the future, raw data will be loaded directly from this path.
 
@@ -186,12 +203,68 @@ All of our experiment results, including 100s of random-search experiments are a
 
 The results' format is described in [utils](#utils).
 # NewHandPD
-todo : add doc.  
-In the mean-time : refer to report #6 or to `newhandpd_v_pahaw`.
+## Data
+### Download
+#### Command-line
+To get the data you can run the following commands from the `data` directory :
+```
+mkdir NewHandPD
+cd NewHandPD/
+
+#download healthy data
+mkdir Healthy
+cd Healthy/
+wget http://wwwp.fc.unesp.br/~papa/pub/datasets/Handpd/NewHealthy/Signal.zip
+unzip Signal.zip
+cd ..
+
+#download Patients data
+mkdir Patients
+cd Patients/
+wget http://wwwp.fc.unesp.br/~papa/pub/datasets/Handpd/NewPatients/Signal.zip
+unzip Signal.zip
+```
+#### Graphic interface
+You can get the data from [here](http://wwwp.fc.unesp.br/~papa/pub/datasets/Handpd/), under "The NewHandPD dataset" you will find :
+- [Healthy Signals](http://wwwp.fc.unesp.br/~papa/pub/datasets/Handpd/NewHealthy/Signal.zip)
+- [Patient Signals](http://wwwp.fc.unesp.br/~papa/pub/datasets/Handpd/NewPatients/Signal.zip)
+
+The data should be placed like this :  
+```
+data
+└───NewHandPD
+│   └───Healthy
+│   │   └───Signal
+│   │   │   │   *.txt
+│   └───Patients
+│   │   └───Signal
+│   │   │   │   *.txt
+```
+
+### Correct it /!\ Mandatory /!\
+Healthy's `SigMea1-28` is not properly named it should be `SigMea1-H28`, rename it before running the rest of this code !
+
+Healthy `sigDiaA-H34.txt` age was set at 50 but in all other tasks it was set at 40 so I set it to 40, do it as well before running the rest of the code ! See :  
+circA-H34.txt 40 circB-H34.txt 40 sigDiaB-H34.txt 40 sigMea1-H34.txt 40 sigMea2-H34.txt 40 sigMea3-H34.txt 40 sigMea4-H34.txt 40 sigSp1-H34.txt 40 sigSp2-H34.txt 40 sigSp3-H34.txt 40 sigSp4-H34.txt 40
+
+## Data analysis
+The first part consists of a statistical analysis :
+- correlation between the subject's age and it's different tasks' duration
+- t-tests between the different tasks durations of controls and PDs
+- t-test between the controls and PDs' age
+
+The second part consists in classification of subjects depending on the duration of their different task, and of their age (using either a rule based model or Linear discriminant analysis).
 
 # Data exploration
 ## Age and duration analysis
 this study is similar to the one in [NewHandPD](#NewHandPD).
+The first part consists in classification of subjects depending on the duration of their different task, and of their age (using either a rule based model or Linear discriminant analysis).
+
+The second part consists of a statistical analysis :
+- correlation between the subject's age and it's different tasks' duration
+- t-tests between the different tasks durations of controls and PDs
+- t-test between the controls and PDs' age
+
 ## Exploration
 
 Provides some insights about the content of the data

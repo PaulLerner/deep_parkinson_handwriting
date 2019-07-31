@@ -17,7 +17,7 @@ def load_data():
     folder_path=listdir(data_path)
     folder_path.sort()
 
-    meta_path=join("..","PaHaW","corpus_PaHaW.csv")
+    meta_path=join("data","PaHaW","corpus_PaHaW.csv")
     meta_data=np.loadtxt(meta_path,dtype=str,skiprows=1,delimiter=";")#skip the first line == headers
     labels=list(map(lambda x: 1 if x =="ON" else 0, meta_data[:,4]))
     ages=meta_data[:,5].astype(int)
@@ -47,14 +47,6 @@ def load_data():
                 task=task[:-12]
             subject.append(task)
         yield subject,labels[i],ages[i]
-
-        """for i,j in [(56, 0), (9, 1), (39, 4), (67, 7)]:
-            for k,timestep in enumerate(data[i][j]):
-                if(timestep[measure2index["button_status"]]==1):#wait for on paper button status
-                    break
-            #then trims the data
-            data[i][j]=data[i][j][k:]
-        data[43][-1]=data[43][-1][:-12]"""
 
 ## augmentation
 def flip(task,axis_i):
