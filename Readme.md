@@ -96,7 +96,20 @@ The Cross-Validation (CV) function and the Majority Voting function are implemen
 
 You can use the CV function even if you want to train on only one fold (i.e. one dataset split) by setting `run_CV` to `False`. In this case, you can use `start_at_fold` to skip the the first `start_at_fold` folds (thus it should be smaller than `n_splits`, but that's up to the user).
 
-You can choose the number of splits (e.g. 10 fold cross validation) using n_splits and the # of epochs using n_epochs. We only used 10 CV in all our experiments to keep consistent results with Drotar et al. and Moetesum et al. The actual split is done using [sklearn's StratifiedKFold](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.StratifiedKFold.html), with a random_state set at `1` so that the split is always the same. The random seed is always set at `1` in NumPy and PyTorch before doing any random operation. Note that the CV is stratified, meaning that there's the same # of PDs and HCs in the data sets.
+You can choose the number of splits (e.g. 10 fold cross validation) using n_splits and the # of epochs using n_epochs. We only used 10 CV in all our experiments to keep consistent results with Drotar et al. and Moetesum et al. The actual split is done using [sklearn's StratifiedKFold](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.StratifiedKFold.html), with a random_state set at `1` so that the split is always the same. The random seed is always set at `1` in NumPy and PyTorch before doing any random operation. Note that the CV is stratified, meaning that there's the same # of PDs and HCs in the data sets, see table below.
+##### Stratified 10 CV Dataset Split
+fold | subject (index, label)
+--|--
+0 | (3, 1), (25, 0), (41, 1), (43, 1), (58, 1), (63, 0), (65, 0), (69, 0)
+1 | (17, 1), (19, 1), (21, 1), (30, 1), (48, 0), (50, 0), (52, 0), (56, 0)
+2 | (36, 1), (37, 1), (42, 1), (57, 1), (61, 0), (62, 0), (64, 0), (68, 0)
+3 | (2, 1), (4, 1), (24, 0), (26, 0), (31, 1), (35, 1), (59, 0), (60, 0)
+4 | (10, 1), (14, 1), (29, 1), (38, 0), (45, 0), (53, 0), (55, 1), (67, 0)
+5 | (6, 1), (18, 1), (20, 1), (28, 0), (49, 0), (51, 0), (54, 1), (66, 0)
+6 | (7, 1), (13, 1), (32, 0), (44, 0), (70, 0), (71, 1)
+7 | (0, 1), (1, 1), (16, 1), (22, 0), (23, 0), (47, 0)
+8 | (5, 1), (11, 1), (15, 1), (27, 0), (39, 0), (46, 0)
+9 | (8, 1), (9, 1), (12, 1), (33, 0), (34, 0), (40, 0)
 
 If you want to use 2 different models for on-paper and in-air strokes, you should dive into the CV code and initialize `in_air` the same way as `model`.
 
