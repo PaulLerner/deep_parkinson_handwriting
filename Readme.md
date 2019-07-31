@@ -2,6 +2,8 @@ Work by Paul Lerner under Laurence Likforman-Sulem supervision.
 
 All the modules, models, extra-code are stored in `modules/`
 
+All of the content of this Readme is also present in relevant places in the different python-notebooks-files.
+
 # Contents
 - [Dependencies](#dependencies)
 - [Utils](#utils)
@@ -52,8 +54,6 @@ If you want to change any other hyperparameters you will have to dive into the `
 # Utils
 `utils.py` contains misc. utilitaries such as measures and task dictionaries, confusion matrix.
 # Main
-
-All of the content of this section is also present in relevant places in `Main.ipynb`.
 
 ## utils
 some extra utils in addition to `utils.py` due to the great number of parameters :
