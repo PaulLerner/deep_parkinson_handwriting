@@ -96,16 +96,16 @@ These are stored as lists in `utils.py`
 
  The task sequence is in average **2286** &rarr; task duration is in average 11.4s  
 
- task | max duration | avg duration | avg duration std | avg duration per letters | max duration per tokens | max duration per stroke | max # of strokes | std of stroke duration | std of # of strokes
- --|--|--|--|--|--|--|--|--|--
- spiral | 16071 | 2873 | 2267.76 | 2758.75  | 16071| 16071|25|1715|3.57
- l | 4226|1639 | 724.14 | 333 | 1242|752|15|109 | 1.42
- le | 6615| 1966 | 999.61 | 198 | 1649|1104|15| 160 | 1.57
- les | 6827| 2301 | 1095.54 | 153| 1956|1476|21| 183 | 2.47
- lektorka | 7993| 2600 | 1333.76  | 163| ?|3568|29| 281 | 7.16
- porovnat | 5783| 2314 | 1033.69 |144| ?|2057|43| 198 | 8.72
- nepopadnout | 4423| 1473 | 650.65 | 133| ?|2267|35| 189 | 6.85
- tram | 7676| 3094 | 1158.81 | 146| ?|1231|67| 117 | 8.38
+ task | max duration | avg duration | avg duration std | avg duration per letters | max duration per tokens | avg duration per stroke | max duration per stroke | max # of strokes | std of stroke duration | std of # of strokes
+ --|--|--|--|--|--|--|--|--|--|--
+ spiral | 16071 | 2873 | 2267.76 | 2758.75  | 16071| 1189 +- 1715 | 16071|25|1715|3.57
+ l       | 4226|1639 | 724.14 | 333 | 1242  |169 +- 109|752   | 15|109 | 1.42
+ le       | 6615| 1966 | 999.61 | 198 | 1649|202 +- 160|1104 | 15| 160 | 1.57
+ les     | 6827| 2301 | 1095.54 | 153| 1956|228 +- 183|1476 | 21| 183 | 2.47
+ lektorka | 7993| 2600 | 1333.76  | 163| ?|203 +- 281|3568 | 29| 281 | 7.16
+ porovnat | 5783| 2314 | 1033.69 |144| ?|148 +- 198|2057 | 43| 198 | 8.72
+ nepopadnout | 4423| 1473 | 650.65 | 133| ?|134 +- 189|2267 | 35| 189 | 6.85
+ tram       | 7676| 3094 | 1158.81 | 146| ?|101 +- 117|1231 | 67| 117 | 8.38
 
 ## Training
 The Cross-Validation (CV) function and the Majority Voting function are implemented in Main because of the great number of parameters. The training step and epoch function are in `training.py`
