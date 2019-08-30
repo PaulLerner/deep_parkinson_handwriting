@@ -2,7 +2,7 @@ Work by Paul Lerner under Laurence Likforman-Sulem supervision.
 
 All the modules, models, extra-code are stored in `modules/`
 
-All of the content of this Readme is also present in relevant places in the different python-notebooks-files.
+All of the content of this Readme is also present in relevant places in the different python-notebook files.
 
 If you use this software, please cite our paper : *Lerner, P., Likforman-Sulem, L., 2019. Classification of online handwriting time series for parkinson’s disease diagnosis using deep learning, in: 2019 Junior Conference on Data Science and Engineering (JDSE).*
 ```
