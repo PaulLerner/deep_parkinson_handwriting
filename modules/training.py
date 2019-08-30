@@ -60,7 +60,7 @@ def step(input, target, model, optimizer, loss_fn, batch_size, clip=None,validat
 
 def epoch(data,targets, model, optimizer, loss_fn, batch_size, random_index,
 in_air =None, in_air_optimizer=None,decoder=None,decoder_optimizer=None,
-clip=None, validation=False,window_size=None,task_i=None,augmentation=None,
+clip=None, validation=False,window_size=None,task_i=None,
 paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
     if batch_size!=1:
         raise NotImplementedError("batch_size should be 1, got {}".format(batch_size))
@@ -68,93 +68,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
     predictions=[]
     condition_targets=[]
 
-    if augmentation is not None:
-        if hierarchical:
-            raise NotImplementedError("augmentation is not implemented for hierarchical models, see epoch function")
-        #i is subject index and j is tranformation index
-        super_index=[(index,j) for index in random_index for j in range(4)]# 4 because 3 transforms + original
-
-        np.random.seed(1)
-        np.random.shuffle(super_index)
-        for index,j in super_index:
-            condition_targets.append(targets[index])
-            #augmentation
-            subject=data[index].copy()
-            translation=np.random.uniform(-0.5,0.5)#also worth for rotation w.r.t. time
-            zoom_factor=np.random.uniform(0.8,1.2)
-            #crop=np.random.randint(len(subject)//10,len(subject)//5)#also worth for size of window warping
-            #window_warp=np.random.randint(0,len(subject)-crop)
-
-            if j ==0:#keep original
-                keep_measures=[]
-                #warped=subject[window_warp:window_warp+crop]
-                pass
-            elif j==1:
-                #apply translation/zoom/time_rot to all measures but button_status
-                #apply crop at the beginning
-                #apply flip on x axis
-                #UPSAMPLE worth both for rescaling and window warping
-                rot=np.deg2rad(15)
-                #subject+=translation#*=zoom_factor
-                #subject[:,measure2index["button_status"]]=data[index][:,measure2index["button_status"]]
-                #subject=upsample(subject)
-                keep_measures=np.array([
-                    measure2index['y-coordinate'],
-                    measure2index['x-coordinate'],
-                    measure2index['timestamp'],
-                    measure2index['tilt'],
-                    measure2index['elevation'],
-                    measure2index['pressure']
-                ])
-
-                #warped=upsample(subject[window_warp:window_warp+crop])
-                #subject[:,0]=-subject[:,0]
-            elif j==2:
-                #apply flip on y axis
-                #apply crop at the end
-                #apply translation/zoom/time_rot  to all measures but spatial coordinate and button_status
-                #DOWNSAMPLE *2 worth both for rescaling and window warping
-                rot=np.deg2rad(-15)
-                keep_measures=np.array([
-                    measure2index['timestamp'],
-                    measure2index['tilt'],
-                    measure2index['elevation'],
-                    measure2index['pressure']
-                ])
-                #warped=downsample(subject[window_warp:window_warp+crop],2)
-                #subject[-crop:]=0
-                #rotate(subject,rot)
-            elif j==3:
-                #apply flip both on x and y axis
-                #apply crop both at the end and at the beginning
-                #apply translation/zoom/time_rot  to spatial coordinate only
-                #DOWNSAMPLE *4 worth both for rescaling and window warping
-                #subject=downsample(subject,4)
-                rot=np.deg2rad(30)
-                #warped=downsample(subject[window_warp:window_warp+crop],4)
-                #subject[:,0]+=translation#*=zoom_factor
-                keep_measures=np.array([
-                    measure2index['y-coordinate'],
-                    measure2index['x-coordinate']
-                ])
-                #subject[:,keep_measures]+=translation#rotate(subject,rot)
-            else:
-                raise ValueError("expected j in range(4), got {}".format(j))
-            for m in keep_measures:
-                subject[:,m]+=np.linspace(-translation/2,translation/2,subject.shape[0])
-            #subject=np.concatenate((subject[:window_warp],warped,subject[window_warp+crop:]))
-            if max_len is not None:
-                subject=np.concatenate((subject,np.zeros(shape=(max_len-len(subject),subject.shape[1]))))
-            #numpy to tensor
-            target=torch.Tensor([targets[index]]).unsqueeze(0)
-            if model.__class__.__name__!='Encoder' and model.__class__.__name__!= 'Model':
-                subject=torch.Tensor(subject).unsqueeze(0).transpose(1,2)
-            else:
-                subject=torch.Tensor(subject).unsqueeze(1)#add batch dimension
-            loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
-            predictions.append(prediction)
-            losses.append(loss)
-    elif not paper_air_split or hierarchical:#single task learning on the whole sequence OR hierarchical model
+    if not paper_air_split or hierarchical:#single task learning on the whole sequence OR hierarchical model
         for index in random_index:
             condition_targets.append(targets[index])
             if max_len is not None:
@@ -201,9 +115,6 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
                 subject=torch.Tensor(subject).unsqueeze(1)
 
             target=torch.Tensor([targets[i]]).unsqueeze(0)
-            #/!\ uncomment this to use the same model regardless of on paper or in air strokes
-            #loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size, clip,validation,device=device,hierarchical=hierarchical)
-
 
             if not on_paper and in_air is not None:
                 loss, prediction =step(subject,target, in_air,in_air_optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
