@@ -1,11 +1,6 @@
 #results is a temporary file that should be integrated to reports/experiments results
 results.csv
 .~lock.results.csv#
-#other temp files that should not be pushed
-baseline stroke split-both air and paper.ipynb
-data augmentation.ipynb
-Main-*
-Main *
 # pycharm stuff
 .idea/
 
