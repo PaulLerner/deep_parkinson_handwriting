@@ -90,6 +90,7 @@ paper_air_split=False,device="cuda",hierarchical=False,max_len=None):
             loss, prediction =step(subject,target, model, optimizer, loss_fn, batch_size,clip,validation,device=device,hierarchical=hierarchical)
             predictions.append(prediction)
             losses.append(loss)
+            #foo
     #single task learning on subsequences (e.g. strokes)
     elif paper_air_split and not hierarchical:
         #if multitask learning len(data[i]) == 8 because 8 tasks
